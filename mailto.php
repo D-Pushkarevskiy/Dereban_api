@@ -19,7 +19,7 @@ function Mailto($email, $url) {
     $mail->SMTPSecure = "tls";
     $mail->Port = 587;
     $mail->Username = "dereban.info@gmail.com";
-    $mail->Password = "qwertyloh911";
+    $mail->Password = "!oKzpcGa2%FV";
     $mail->Host = "smtp.gmail.com";
     $mail->Mailer = "smtp";
     $mail->Charset = "UTF-8";
