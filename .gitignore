@@ -18,6 +18,4 @@
 *.sublime-workspace
 
 #NB
-.nbproject
-/nbproject/project.properties
-/nbproject/project.xml
+nbproject/
