@@ -6,7 +6,7 @@ define('ALLOW_FRONT_URL', 'http://localhost:4200');
 
 define('dbshost', 'localhost');
 define('dbsuname', 'root');
-define('dbspass', 'newpass');
+define('dbspass', '');
 define('dbsname', 'dereban_bd');
 define('dbsdriver', 'mysqli');
 

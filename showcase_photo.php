@@ -1,6 +1,6 @@
 <?php
 
-$destination = ads_images_url . '/';
+$destination = ADS_IMAGES_PATH . '/';
 $date = gmmktime();
 $file_path = SqlGetUserId($authToken) . '/';
 $user_photo_path = 'date' . $date . '-user_id-' . SqlGetUserId($authToken) . '.jpg';
@@ -8,8 +8,8 @@ $user_photo_path = 'date' . $date . '-user_id-' . SqlGetUserId($authToken) . '.j
 $photo = $_FILES['photo']['tmp_name'];
 
 if (is_uploaded_file($photo)) {
-    if (!file_exists(ads_images_url)) {
-        mkdir(ads_images_url);
+    if (!file_exists(ADS_IMAGES_PATH)) {
+        mkdir(ADS_IMAGES_PATH);
     }
     if (!file_exists($destination)) {
         mkdir($destination);

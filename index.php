@@ -10,14 +10,14 @@ header('Access-Control-Allow-Origin: ' . ALLOW_FRONT_URL);
 header("Access-Control-Allow-Headers: content-type");
 
 //Ключ шифрования токенов
-define('secret_key', '@p5U-xMtZbt=\vf6]xJy$q/(vJX4\y');
+define('SECRET_KEY', '@p5U-xMtZbt=\vf6]xJy$q/(vJX4\y');
 //Пути сохранения фотографии пользователя
-define('photo_url', $_SERVER['DOCUMENT_ROOT'] . 'dereban/src/assets/users_images/');
-define('photo_url_ang', '../assets/users_images/');
+define('PHOTO_PATH', 'C:/OSpanel/OSPanel/domains/dereban/src/assets/users_images/');
+define('PHOTO_PATH_ANG', '../assets/users_images/');
 
 //Пути сохранения фотографий товара пользователя
-define('ads_images_url', $_SERVER['DOCUMENT_ROOT'] . 'dereban/src/assets/users_images/showcase_photos');
-define('ads_images_url_ang', '../assets/users_images/showcase_photos/');
+define('ADS_IMAGES_PATH', 'C:/OSpanel/OSPanel/domains/dereban/src/assets/users_images/showcase_photos');
+define('ADS_IMAGES_PATH_ANG', '../assets/users_images/showcase_photos/');
 
 use \Firebase\JWT\JWT;
 
@@ -148,7 +148,7 @@ function Auth() {
                             'date' => gmmktime()
                         );
 
-                        $jwt = JWT::encode($authToken, secret_key);
+                        $jwt = JWT::encode($authToken, SECRET_KEY);
 
                         //Выбираем id пользователя из таблицы user
                         $sql_get_user_id = $db->Execute("select id from `user` where email=" . QPrepStr($user_login));
@@ -188,7 +188,7 @@ function Auth() {
                 'user' => $user_login,
                 'date' => gmmktime()
             );
-            $jwt = JWT::encode($regToken, secret_key);
+            $jwt = JWT::encode($regToken, SECRET_KEY);
 
             $url = 'http://localhost:4200/confirm-registration/' . $jwt;
 
@@ -385,8 +385,11 @@ function GetUserRating() {
 function AddUserInfo() {
     global $db;
 
+    $request_body = file_get_contents('php://input');
+    $data = json_decode($request_body, true);
+
     if (isset($_GET['authToken']) && $_GET['authToken'] != '') {
-        if (isset($_GET['user']) && ($user = json_decode($_GET['user'], true)) && isset($_GET['contacts']) && ($contacts = json_decode($_GET['contacts'], true)) && isset($_GET['social']) && ($social = json_decode($_GET['social'], true))) {
+        if (isset($data['user']) && ($user = $data['user']) && isset($data['contacts']) && ($contacts = $data['contacts']) && isset($data['social']) && ($social = $data['social'])) {
 
             $authToken = $_GET['authToken'];
 
@@ -417,7 +420,7 @@ function AddUserInfo() {
                 result_text(1, 'Ошибка сервера');
             }
         } else {
-            result_text(1, 'Ошибка сервера');
+            result_text(1, 'Ошибка сервера 228');
         }
     } else {
         result_text(1, 'Ошибка сервера');
@@ -450,11 +453,10 @@ function GetUserPhoto() {
         $authToken = $_GET['authToken'];
 
         if (SqlGetUserId($authToken)) {
-            $photo_url = photo_url . 'user_id-' . SqlGetUserId($authToken) . '.jpg';
+            $sql_select_user_photo = $db->Execute('select photo from `user_contacts` where user_id=' . SqlGetUserId($authToken));
             $default_photo = '../assets/users_images/user_profile_image_default.jpg';
-            if (file_exists($photo_url)) {
-                $photo_url = photo_url_ang . 'user_id-' . SqlGetUserId($authToken) . '.jpg';
-                result_text(0, $photo_url);
+            if ($sql_select_user_photo && ($sql_select_user_photo->RecordCount() > 0)) {
+                result_text(0, $sql_select_user_photo->Fields('photo'));
             } else {
                 result_text(0, $default_photo);
             }
@@ -474,7 +476,7 @@ function SetUserPhoto() {
         if (isset($_GET['authToken'])) {
             $authToken = $_GET['authToken'];
 
-            if ($SqlGetUserId($authToken)) {
+            if (SqlGetUserId($authToken)) {
                 include_once './user_photo.php';
             } else {
                 result_text(1, 'Ошибка сервера');
@@ -528,8 +530,11 @@ function SaveShowcasePhoto() {
 function SaveShowcase() {
     global $db;
 
+    $request_body = file_get_contents('php://input');
+    $data = json_decode($request_body, true);
+
     if (isset($_GET['authToken']) && $_GET['authToken'] != '') {
-        if (isset($_GET['main']) && ($main = json_decode($_GET['main'], true)) && isset($_GET['options']) && ($options = json_decode($_GET['options'], true)) && isset($_GET['description']) && ($description = json_decode($_GET['description'], true)) && isset($_GET['additionalPhotos']) && ($additionalPhotos = json_decode($_GET['additionalPhotos'], true))) {
+        if (isset($data['main']) && ($main = $data['main']) && isset($data['options']) && ($options = $data['options']) && isset($data['description']) && ($description = $data['description']) && isset($data['additionalPhotos']) && ($additionalPhotos = $data['additionalPhotos'])) {
 
             $authToken = $_GET['authToken'];
             $filePath = $_GET['file_path'];
@@ -618,6 +623,7 @@ function GetShowCases() {
             . 'us.description, '
             . 'us.additionalPhotos, '
             . 'uc.name, '
+            . 'uc.photo, '
             . 'uc.surname, '
             . 'uc.area, '
             . 'uc.telegram, '
@@ -658,7 +664,7 @@ function GetShowCases() {
                     'user_id' => $sql_get_show_cases->Fields('user_id'),
                     'adding_time' => FormatDate($sql_get_show_cases->Fields('adding_time')),
                     'case_name' => $sql_get_show_cases->Fields('case_name'),
-                    'photo_url' => ads_images_url_ang . $sql_get_show_cases->Fields('photo_url'),
+                    'photo_url' => ADS_IMAGES_PATH_ANG . $sql_get_show_cases->Fields('photo_url'),
                     'price' => $sql_get_show_cases->Fields('price'),
                     'type' => $sql_get_show_cases->Fields('type'),
                     'full_type' => $sql_get_show_cases->Fields('full_type'),
@@ -671,6 +677,7 @@ function GetShowCases() {
                     'additionalPhotos' => $sql_get_show_cases->Fields('additionalPhotos'),
                     'case_rating' => $sql_get_show_case_rating->Fields('sum'),
                     'user_rating' => $user_rating,
+                    'user_photo' => $sql_get_show_cases->Fields('photo'),
                     'user_name' => $sql_get_show_cases->Fields('name'),
                     'user_surname' => $sql_get_show_cases->Fields('surname'),
                     'user_area' => $sql_get_show_cases->Fields('area'),
@@ -692,12 +699,13 @@ function GetShowCases() {
 }
 
 function FormatDate($date) {
-    if ($date >= strtotime("today"))
-        return "Сегодня в " . strftime("%R", $date + 7200);
-    else if ($date >= strtotime("yesterday"))
-        return "Вчера в " . strftime("%R", $date + 7200);
-    else 
+    if ($date >= strtotime("today")) {
+        return "Сегодня в " . strftime("%H:%M", $date);
+    } else if ($date >= strtotime("yesterday")) {
+        return "Вчера в " . strftime("%H:%M", $date);
+    } else {
         return strftime("%d.%m", $date);
+    }
 }
 
 function ShowCaseChangeRating() {
