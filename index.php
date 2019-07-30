@@ -7,7 +7,8 @@ include_once './mailto.php';
 include_once './jwt/JWT.php';
 
 header('Access-Control-Allow-Origin: ' . ALLOW_FRONT_URL);
-header("Access-Control-Allow-Headers: content-type");
+header('Content-Type: application/json; charset=UTF-8');
+header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With');
 
 //Ключ шифрования токенов
 define('SECRET_KEY', '@p5U-xMtZbt=\vf6]xJy$q/(vJX4\y');
@@ -21,6 +22,42 @@ define('ADS_IMAGES_PATH_ANG', '../assets/users_images/showcase_photos/');
 
 use \Firebase\JWT\JWT;
 
+/** 
+ * Get header Authorization
+ * */
+function getAuthorizationHeader()
+{
+    $headers = null;
+    if (isset($_SERVER['Authorization'])) {
+        $headers = trim($_SERVER["Authorization"]);
+    } else if (isset($_SERVER['HTTP_AUTHORIZATION'])) { //Nginx or fast CGI
+        $headers = trim($_SERVER["HTTP_AUTHORIZATION"]);
+    } elseif (function_exists('apache_request_headers')) {
+        $requestHeaders = apache_request_headers();
+        // Server-side fix for bug in old Android versions (a nice side-effect of this fix means we don't care about capitalization for Authorization)
+        $requestHeaders = array_combine(array_map('ucwords', array_keys($requestHeaders)), array_values($requestHeaders));
+        //print_r($requestHeaders);
+        if (isset($requestHeaders['Authorization'])) {
+            $headers = trim($requestHeaders['Authorization']);
+        }
+    }
+    return $headers;
+}
+/**
+ * get access token from header
+ * */
+function getBearerToken()
+{
+    $headers = getAuthorizationHeader();
+    // HEADER: Get the access token from the header
+    if (!empty($headers)) {
+        if (preg_match('/Bearer\s(\S+)/', $headers, $matches)) {
+            return $matches[1];
+        }
+    }
+    return null;
+}
+
 //Роутинг по функциям
 if (isset($_GET['func'])) {
     switch ($_GET['func']) {
@@ -31,7 +68,7 @@ if (isset($_GET['func'])) {
             Conf_register();
             break;
         case 'mailto':
-            Mailto($to_who);
+            Mailto($param1, $param2);
             break;
         case 'get_user_name':
             GetUserName();
@@ -85,7 +122,8 @@ if (isset($_GET['func'])) {
 }
 
 //Ответ фронтенду
-function result_text($code, $text, $isAuth = NULL) {
+function result_text($code, $text, $isAuth = NULL)
+{
     echo json_encode([
         'code' => $code,
         'text' => $text,
@@ -94,7 +132,8 @@ function result_text($code, $text, $isAuth = NULL) {
     return false;
 }
 
-function result_user_info($name, $surname, $phone, $phone2, $area, $telegram, $vk, $facebook, $instagram) {
+function result_user_info($name, $surname, $phone, $phone2, $area, $telegram, $vk, $facebook, $instagram)
+{
     echo json_encode([
         'name' => $name,
         'surname' => $surname,
@@ -109,7 +148,8 @@ function result_user_info($name, $surname, $phone, $phone2, $area, $telegram, $v
     return false;
 }
 
-function Auth() {
+function Auth()
+{
 
     global $db;
 
@@ -128,10 +168,10 @@ function Auth() {
         if ($query && ($query->RecordCount() > 0)) {
 
             $sql_check_token = 'select '
-                    . 'ut.regToken '
-                    . 'from `user_tokens` ut '
-                    . 'inner join `user` u on ut.user_id=u.id '
-                    . 'where u.email=' . QPrepStr($user_login);
+                . 'ut.regToken '
+                . 'from `user_tokens` ut '
+                . 'inner join `user` u on ut.user_id=u.id '
+                . 'where u.email=' . QPrepStr($user_login);
             $query_check_token = $db->Execute($sql_check_token);
             //вход в существующий аккаунт
             if ($user_password != $query->Fields('password')) {
@@ -225,7 +265,8 @@ function Auth() {
     }
 }
 
-function Conf_register() {
+function Conf_register()
+{
 
     global $db;
 
@@ -237,10 +278,10 @@ function Conf_register() {
         $regToken = $_GET['regToken'];
 
         $sql_check_pass = 'select '
-                . 'u.password '
-                . 'from `user` u '
-                . 'inner join `user_tokens` ut on u.id=ut.user_id '
-                . 'where ut.regToken=' . QPrepStr($regToken);
+            . 'u.password '
+            . 'from `user` u '
+            . 'inner join `user_tokens` ut on u.id=ut.user_id '
+            . 'where ut.regToken=' . QPrepStr($regToken);
         $query = $db->Execute($sql_check_pass);
 
         if ($query && ($query->RecordCount() > 0)) {
@@ -252,8 +293,8 @@ function Conf_register() {
                 $sql_delete_regToken = 'update `user_tokens` set regToken=null where regToken=' . QPrepStr($regToken);
                 $query = $db->Execute($sql_delete_regToken);
                 result_text(0, "Добро пожаловать на сайт 'Dereban.ua', подтверждение регистрации прошло успешно!"
-                        . " "
-                        . "Для продолжения пожалуйста авторизуйтесь");
+                    . " "
+                    . "Для продолжения пожалуйста авторизуйтесь");
             }
         } else {
             result_text(1, 'Аккаунт уже был ранее подтвержден');
@@ -263,44 +304,41 @@ function Conf_register() {
     }
 }
 
-function SqlGetUserId($authToken) {
+function SqlGetUserId()
+{
     global $db;
+    $authToken = getBearerToken();
 
-    $sql_get_user_id = $db->Execute('select user_id from `user_tokens` where authToken=' . QPrepStr($authToken));
-    if ($sql_get_user_id && ($sql_get_user_id->Fields('user_id') != '')) {
-        return $sql_get_user_id->Fields('user_id');
-    } else {
-        return false;
+    if ($authToken) {
+        $sql_get_user_id = $db->Execute('select user_id from `user_tokens` where authToken=' . QPrepStr($authToken));
+        if ($sql_get_user_id && ($sql_get_user_id->Fields('user_id') != '')) {
+            return $sql_get_user_id->Fields('user_id');
+        } else {
+            return false;
+        }
     }
 }
 
-function GetUserId() {
-    if (isset($_GET['authToken']) && $_GET['authToken'] != '') {
-
-        $authToken = $_GET['authToken'];
-
-        if (SqlGetUserId($authToken)) {
-            result_text(0, SqlGetUserId($authToken));
-        } else {
-            result_text(1, 'Ошибка сервера');
-        }
+function GetUserId()
+{
+    if (SqlGetUserId()) {
+        result_text(0, SqlGetUserId());
     } else {
         result_text(1, 'Ошибка сервера');
     }
 }
 
-function GetUserName() {
+function GetUserName()
+{
     global $db;
+    $authToken = getBearerToken();
 
-    if (isset($_GET['authToken']) && $_GET['authToken'] != '') {
-
-        $authToken = $_GET['authToken'];
-
+    if ($authToken) {
         $sql_get_user_name = $db->Execute('select '
-                . 'uc.name '
-                . 'from `user_contacts` uc '
-                . 'inner join `user_tokens` ut on uc.user_id=ut.user_id '
-                . 'where ut.authToken=' . QPrepStr($authToken));
+            . 'uc.name '
+            . 'from `user_contacts` uc '
+            . 'inner join `user_tokens` ut on uc.user_id=ut.user_id '
+            . 'where ut.authToken=' . QPrepStr($authToken));
 
         if ($sql_get_user_name && ($sql_get_user_name->RecordCount() > 0)) {
             result_text(0, $sql_get_user_name->Fields('name'));
@@ -312,17 +350,17 @@ function GetUserName() {
     }
 }
 
-function GetTitleForUserAdsComp() {
+function GetTitleForUserAdsComp()
+{
     global $db;
+    $authToken = getBearerToken();
 
     if (isset($_GET['id']) && $_GET['id'] != '') {
 
         $id = $_GET['id'];
 
-        if (isset($_GET['authToken']) && $_GET['authToken'] != '') {
-            $authToken = $_GET['authToken'];
-
-            if (SqlGetUserId($authToken) == $id) {
+        if ($authToken) {
+            if (SqlGetUserId() == $id) {
                 result_text(0, 'Мои объявления');
             } else {
                 $sql_get_user_name_surname = $db->Execute('select name, surname from `user_contacts` where user_id=' . $id);
@@ -339,16 +377,17 @@ function GetTitleForUserAdsComp() {
     }
 }
 
-function GetUserRating() {
+function GetUserRating()
+{
     global $db;
+    $authToken = getBearerToken();
 
-    if ((isset($_GET['case_id']) && $_GET['case_id'] != '') || (isset($_GET['authToken']) && $_GET['authToken'] != '')) {
+    if ((isset($_GET['case_id']) && $_GET['case_id'] != '') || ($authToken)) {
         if (isset($_GET['case_id']) && $_GET['case_id'] != '') {
             $case_id = $_GET['case_id'];
             $sql_get_user_id = $db->Execute('select user_id from `user_showcase` where id=' . intval($case_id));
         }
-        if (isset($_GET['authToken']) && $_GET['authToken'] != '') {
-            $authToken = $_GET['authToken'];
+        if ($authToken) {
             $sql_get_user_id = $db->Execute('select user_id from `user_tokens` where authToken=' . QPrepStr($authToken));
         }
         if ($sql_get_user_id) {
@@ -382,16 +421,16 @@ function GetUserRating() {
     }
 }
 
-function AddUserInfo() {
+function AddUserInfo()
+{
     global $db;
 
     $request_body = file_get_contents('php://input');
     $data = json_decode($request_body, true);
+    $authToken = getBearerToken();
 
-    if (isset($_GET['authToken']) && $_GET['authToken'] != '') {
+    if ($authToken) {
         if (isset($data['user']) && ($user = $data['user']) && isset($data['contacts']) && ($contacts = $data['contacts']) && isset($data['social']) && ($social = $data['social'])) {
-
-            $authToken = $_GET['authToken'];
 
             if ($contacts['phone2'] === '') {
                 $phone2 = 'NULL';
@@ -411,8 +450,8 @@ function AddUserInfo() {
             $upd[] = ' instagram=' . QPrepStr($social['instagram']);
 
             $sql_add_user_info = $db->Execute('update `user_contacts` set '
-                    . implode(',', $upd)
-                    . 'where user_id=' . SqlGetUserId($authToken));
+                . implode(',', $upd)
+                . 'where user_id=' . SqlGetUserId());
 
             if ($sql_add_user_info) {
                 result_text(0, 'Изменения сохранены');
@@ -427,13 +466,13 @@ function AddUserInfo() {
     }
 }
 
-function GetUserInfo() {
+function GetUserInfo()
+{
     global $db;
+    $authToken = getBearerToken();
 
-    if (isset($_GET['authToken']) && $_GET['authToken'] != '') {
-
-        $authToken = $_GET['authToken'];
-        $sql_select_user_info = $db->Execute('select name, surname, phone, phone2, area, telegram, vk, facebook, instagram from `user_contacts` where user_id=' . SqlGetUserId($authToken));
+    if ($authToken) {
+        $sql_select_user_info = $db->Execute('select name, surname, phone, phone2, area, telegram, vk, facebook, instagram from `user_contacts` where user_id=' . SqlGetUserId());
 
         if ($sql_select_user_info && ($sql_select_user_info->RecordCount() > 0)) {
             result_user_info($sql_select_user_info->Fields('name'), $sql_select_user_info->Fields('surname'), $sql_select_user_info->Fields('phone'), $sql_select_user_info->Fields('phone2'), $sql_select_user_info->Fields('area'), $sql_select_user_info->Fields('telegram'), $sql_select_user_info->Fields('vk'), $sql_select_user_info->Fields('facebook'), $sql_select_user_info->Fields('instagram'));
@@ -445,15 +484,14 @@ function GetUserInfo() {
     }
 }
 
-function GetUserPhoto() {
+function GetUserPhoto()
+{
     global $db;
+    $authToken = getBearerToken();
 
-    if (isset($_GET['authToken']) && $_GET['authToken'] != '') {
-
-        $authToken = $_GET['authToken'];
-
-        if (SqlGetUserId($authToken)) {
-            $sql_select_user_photo = $db->Execute('select photo from `user_contacts` where user_id=' . SqlGetUserId($authToken));
+    if ($authToken) {
+        if (SqlGetUserId()) {
+            $sql_select_user_photo = $db->Execute('select photo from `user_contacts` where user_id=' . SqlGetUserId());
             $default_photo = '../assets/users_images/user_profile_image_default.jpg';
             if ($sql_select_user_photo && ($sql_select_user_photo->RecordCount() > 0)) {
                 result_text(0, $sql_select_user_photo->Fields('photo'));
@@ -468,15 +506,15 @@ function GetUserPhoto() {
     }
 }
 
-function SetUserPhoto() {
+function SetUserPhoto()
+{
     global $db;
+    $authToken = getBearerToken();
 
     if (isset($_FILES['photo']) && $_FILES['photo'] != '') {
 
-        if (isset($_GET['authToken'])) {
-            $authToken = $_GET['authToken'];
-
-            if (SqlGetUserId($authToken)) {
+        if ($authToken) {
+            if (SqlGetUserId()) {
                 include_once './user_photo.php';
             } else {
                 result_text(1, 'Ошибка сервера');
@@ -489,12 +527,12 @@ function SetUserPhoto() {
     }
 }
 
-function RemoveAuthToken() {
+function RemoveAuthToken()
+{
     global $db;
+    $authToken = getBearerToken();
 
-    if (isset($_GET['authToken']) && $_GET['authToken'] != '') {
-        $authToken = $_GET['authToken'];
-
+    if ($authToken) {
         $sql_remove_token = $db->Execute('update `user_tokens` set authToken="" where authToken=' . QPrepStr($authToken));
 
         if ($sql_remove_token) {
@@ -507,14 +545,14 @@ function RemoveAuthToken() {
     }
 }
 
-function SaveShowcasePhoto() {
+function SaveShowcasePhoto()
+{
     global $db;
+    $authToken = getBearerToken();
 
     if (isset($_FILES['photo']) && $_FILES['photo'] != '') {
-        if (isset($_GET['authToken'])) {
-            $authToken = $_GET['authToken'];
-
-            if (SqlGetUserId($authToken)) {
+        if ($authToken) {
+            if (SqlGetUserId()) {
                 include_once './showcase_photo.php';
             } else {
                 result_text(1, 'Ошибка сервера');
@@ -527,16 +565,17 @@ function SaveShowcasePhoto() {
     }
 }
 
-function SaveShowcase() {
+function SaveShowcase()
+{
     global $db;
 
     $request_body = file_get_contents('php://input');
     $data = json_decode($request_body, true);
+    $authToken = getBearerToken();
 
-    if (isset($_GET['authToken']) && $_GET['authToken'] != '') {
+    if ($authToken) {
         if (isset($data['main']) && ($main = $data['main']) && isset($data['options']) && ($options = $data['options']) && isset($data['description']) && ($description = $data['description']) && isset($data['additionalPhotos']) && ($additionalPhotos = $data['additionalPhotos'])) {
 
-            $authToken = $_GET['authToken'];
             $filePath = $_GET['file_path'];
 
             $upd = [];
@@ -552,13 +591,13 @@ function SaveShowcase() {
             $upd[] = ' ' . QPrepStr($description['description']);
             $upd[] = ' ' . QPrepStr($additionalPhotos['addPhotosLink']);
 
-            if (SqlGetUserId($authToken)) {
+            if (SqlGetUserId()) {
                 $sql_add_showcase = $db->Execute('insert into `user_showcase` (user_id, adding_time, photo_url, case_name, price, type, full_type, detail_type, state, wheel_size, velo_type, direction, description, additionalPhotos) values ('
-                        . SqlGetUserId($authToken) . ','
-                        . gmmktime() . ','
-                        . QPrepStr($filePath) . ','
-                        . implode(',', $upd)
-                        . ')');
+                    . SqlGetUserId() . ','
+                    . gmmktime() . ','
+                    . QPrepStr($filePath) . ','
+                    . implode(',', $upd)
+                    . ')');
 
                 $sql_select_showcase_id = $db->Execute('select id from `user_showcase` where adding_time=' . gmmktime());
 
@@ -578,19 +617,19 @@ function SaveShowcase() {
     }
 }
 
-function GetShowCases() {
+function GetShowCases()
+{
     global $db;
 
-    $case_id;
-    $condition;
+    $case_id = '';
+    $condition = '';
 
     if (isset($_GET['id']) && $_GET['id'] != '') {
         $condition = 'where us.id=' . intval($_GET['id']);
     } else if (isset($_GET['user_id']) && $_GET['user_id'] != '') {
         $condition = 'where us.user_id=' . intval($_GET['user_id']) . ' order by adding_time desc';
     } else if (isset($_GET['authToken']) && $_GET['authToken'] != '') {
-        $authToken = $_GET['authToken'];
-        $sql_get_favorite_case_id = $db->Execute('select case_id from `case_favorite` where user_id=' . SqlGetUserId($authToken));
+        $sql_get_favorite_case_id = $db->Execute('select case_id from `case_favorite` where user_id=' . SqlGetUserId());
         $case_ids = [];
         if ($sql_get_favorite_case_id->Fields('case_id')) {
             while (!$sql_get_favorite_case_id->EOF) {
@@ -607,35 +646,35 @@ function GetShowCases() {
     }
 
     $sql_get_show_cases = $db->Execute('select '
-            . 'us.id, '
-            . 'us.user_id, '
-            . 'us.adding_time, '
-            . 'us.case_name, '
-            . 'us.photo_url, '
-            . 'us.price, '
-            . 'us.type, '
-            . 'us.full_type, '
-            . 'us.detail_type, '
-            . 'us.state, '
-            . 'us.wheel_size, '
-            . 'us.velo_type, '
-            . 'us.direction, '
-            . 'us.description, '
-            . 'us.additionalPhotos, '
-            . 'uc.name, '
-            . 'uc.photo, '
-            . 'uc.surname, '
-            . 'uc.area, '
-            . 'uc.telegram, '
-            . 'uc.phone, '
-            . 'uc.phone2, '
-            . 'uc.vk, '
-            . 'uc.facebook, '
-            . 'uc.instagram '
-            . 'from `user_showcase` us '
-            . 'inner join `user_contacts` uc '
-            . 'on us.user_id=uc.user_id '
-            . $condition);
+        . 'us.id, '
+        . 'us.user_id, '
+        . 'us.adding_time, '
+        . 'us.case_name, '
+        . 'us.photo_url, '
+        . 'us.price, '
+        . 'us.type, '
+        . 'us.full_type, '
+        . 'us.detail_type, '
+        . 'us.state, '
+        . 'us.wheel_size, '
+        . 'us.velo_type, '
+        . 'us.direction, '
+        . 'us.description, '
+        . 'us.additionalPhotos, '
+        . 'uc.name, '
+        . 'uc.photo, '
+        . 'uc.surname, '
+        . 'uc.area, '
+        . 'uc.telegram, '
+        . 'uc.phone, '
+        . 'uc.phone2, '
+        . 'uc.vk, '
+        . 'uc.facebook, '
+        . 'uc.instagram '
+        . 'from `user_showcase` us '
+        . 'inner join `user_contacts` uc '
+        . 'on us.user_id=uc.user_id '
+        . $condition);
 
     if ($sql_get_show_cases && ($sql_get_show_cases->RecordCount() > 0)) {
         $show_case_result = [];
@@ -698,7 +737,8 @@ function GetShowCases() {
     }
 }
 
-function FormatDate($date) {
+function FormatDate($date)
+{
     if ($date >= strtotime("today")) {
         return "Сегодня в " . strftime("%H:%M", $date);
     } else if ($date >= strtotime("yesterday")) {
@@ -708,17 +748,19 @@ function FormatDate($date) {
     }
 }
 
-function ShowCaseChangeRating() {
+function ShowCaseChangeRating()
+{
     global $db;
+    $authToken = getBearerToken();
 
-    if (isset($_GET['authToken']) && $_GET['authToken'] != '') {
+    if ($authToken) {
 
         $case_id = intval($_GET['case_id']);
         $type = intval($_GET['type']);
-        $authToken = QPrepStr($_GET['authToken']);
+        $authToken = QPrepStr($authToken);
 
         // id пользователя изменившего рейтинг
-        $cur_user_id = SqlGetUserId($authToken);
+        $cur_user_id = SqlGetUserId();
         // id пользователя этого объявления
         $sql_get_user_id_case = $db->Execute('select user_id from `user_showcase` where id=' . $case_id);
         // id пользователей изменявших когда-либо рейтинг этого объявления
@@ -727,9 +769,9 @@ function ShowCaseChangeRating() {
         if ($cur_user_id != $sql_get_user_id_case->Fields('user_id')) {
             if (!$sql_get_user_state->Fields('user_id') || $sql_get_user_state->Fields('user_id') != $cur_user_id) {
                 $sql_add_new_rating = $db->Execute('insert into `case_rating` '
-                        . '(case_id, user_id, rating_value)'
-                        . ' values '
-                        . '(' . $case_id . ', ' . $cur_user_id . ', ' . $type . ')');
+                    . '(case_id, user_id, rating_value)'
+                    . ' values '
+                    . '(' . $case_id . ', ' . $cur_user_id . ', ' . $type . ')');
                 if ($sql_add_new_rating) {
                     result_text(2, $type);
                 } else {
@@ -757,7 +799,8 @@ function ShowCaseChangeRating() {
     }
 }
 
-function ShowCaseGetRating() {
+function ShowCaseGetRating()
+{
     global $db;
 
     if (isset($_GET['case_id']) && $_GET['case_id'] != '') {
@@ -773,23 +816,26 @@ function ShowCaseGetRating() {
     }
 }
 
-function ShowCaseToggleFavorite() {
+function ShowCaseToggleFavorite()
+{
     global $db;
-    if (isset($_GET['case_id']) && $_GET['case_id'] != '' && isset($_GET['authToken']) && $_GET['authToken'] != '') {
-        $case_id = intval($_GET['case_id']);
-        $authToken = QPrepStr($_GET['authToken']);
+    $authToken = getBearerToken();
 
-        $sql_get_case_favorite_status = $db->Execute('select case_id from `case_favorite` where case_id=' . $case_id . ' and user_id=' . SqlGetUserId($authToken));
+    if (isset($_GET['case_id']) && $_GET['case_id'] != '' && $authToken) {
+        $case_id = intval($_GET['case_id']);
+        $authToken = QPrepStr($authToken);
+
+        $sql_get_case_favorite_status = $db->Execute('select case_id from `case_favorite` where case_id=' . $case_id . ' and user_id=' . SqlGetUserId());
 
         if ($sql_get_case_favorite_status->Fields('case_id') != null) {
-            $sql_delete_favorite_from_case = $db->Execute('delete from `case_favorite` where case_id=' . $case_id . ' and user_id=' . SqlGetUserId($authToken));
+            $sql_delete_favorite_from_case = $db->Execute('delete from `case_favorite` where case_id=' . $case_id . ' and user_id=' . SqlGetUserId());
             if ($sql_delete_favorite_from_case) {
                 result_text(0, 'Объявление удалено из избранных');
             } else {
                 result_text(1, 'Ошибка сервера');
             }
         } else {
-            $sql_set_favorite_to_case = $db->Execute('insert into `case_favorite` (case_id, user_id) values (' . $case_id . ',' . SqlGetUserId($authToken) . ')');
+            $sql_set_favorite_to_case = $db->Execute('insert into `case_favorite` (case_id, user_id) values (' . $case_id . ',' . SqlGetUserId() . ')');
             if ($sql_set_favorite_to_case) {
                 result_text(0, 'Объявление добавлено в избранные');
             } else {
@@ -801,12 +847,15 @@ function ShowCaseToggleFavorite() {
     }
 }
 
-function GetActiveFavorite() {
+function GetActiveFavorite()
+{
     global $db;
-    if (isset($_GET['authToken']) && $_GET['authToken'] != '') {
-        $authToken = QPrepStr($_GET['authToken']);
+    $authToken = getBearerToken();
 
-        $sql_select_favorite_case_id = $db->Execute('select case_id from `case_favorite` where user_id=' . SqlGetUserId($authToken));
+    if ($authToken) {
+        $authToken = QPrepStr($authToken);
+
+        $sql_select_favorite_case_id = $db->Execute('select case_id from `case_favorite` where user_id=' . SqlGetUserId());
         if ($sql_select_favorite_case_id && $sql_select_favorite_case_id->Fields('case_id') != null) {
             $case_id_arr = [];
             while (!$sql_select_favorite_case_id->EOF) {
@@ -821,5 +870,3 @@ function GetActiveFavorite() {
         result_text(1, 'Ошибка сервера');
     }
 }
-
-?>

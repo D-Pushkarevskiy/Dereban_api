@@ -2,8 +2,8 @@
 
 $destination = ADS_IMAGES_PATH . '/';
 $date = gmmktime();
-$file_path = SqlGetUserId($authToken) . '/';
-$user_photo_path = 'date' . $date . '-user_id-' . SqlGetUserId($authToken) . '.jpg';
+$file_path = SqlGetUserId() . '/';
+$user_photo_path = 'date' . $date . '-user_id-' . SqlGetUserId() . '.jpg';
 
 $photo = $_FILES['photo']['tmp_name'];
 
