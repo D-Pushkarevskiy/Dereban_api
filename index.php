@@ -76,8 +76,8 @@ if (isset($_GET['func'])) {
         case 'get_title_for_user_ads_component':
             GetTitleForUserAdsComp();
             break;
-        case 'get_user_id':
-            GetUserId();
+        case 'get_user_data':
+            GetUserData();
             break;
         case 'get_user_rating':
             GetUserRating();
@@ -87,9 +87,6 @@ if (isset($_GET['func'])) {
             break;
         case 'get_user_info':
             GetUserInfo();
-            break;
-        case 'get_user_photo':
-            GetUserPhoto();
             break;
         case 'set_user_photo':
             SetUserPhoto();
@@ -132,9 +129,10 @@ function result_text($code, $text, $isAuth = NULL)
     return false;
 }
 
-function result_user_info($name, $surname, $phone, $phone2, $area, $telegram, $vk, $facebook, $instagram)
+function result_user_info($photo, $name, $surname, $phone, $phone2, $area, $telegram, $vk, $facebook, $instagram)
 {
     echo json_encode([
+        'photo' => $photo,
         'name' => $name,
         'surname' => $surname,
         'phone' => $phone,
@@ -319,29 +317,27 @@ function SqlGetUserId()
     }
 }
 
-function GetUserId()
-{
-    if (SqlGetUserId()) {
-        result_text(0, SqlGetUserId());
-    } else {
-        result_text(1, 'Ошибка сервера');
-    }
-}
-
-function GetUserName()
+function GetUserData()
 {
     global $db;
     $authToken = getBearerToken();
 
     if ($authToken) {
-        $sql_get_user_name = $db->Execute('select '
-            . 'uc.name '
+        $sql_get_user_data = $db->Execute('select '
+            . 'uc.user_id, '
+            . 'uc.name, '
+            . 'uc.photo '
             . 'from `user_contacts` uc '
             . 'inner join `user_tokens` ut on uc.user_id=ut.user_id '
             . 'where ut.authToken=' . QPrepStr($authToken));
 
-        if ($sql_get_user_name && ($sql_get_user_name->RecordCount() > 0)) {
-            result_text(0, $sql_get_user_name->Fields('name'));
+        if ($sql_get_user_data && ($sql_get_user_data->RecordCount() > 0)) {
+            result_text(0, [
+                'id' => $sql_get_user_data->Fields('user_id'),
+                'name' => $sql_get_user_data->Fields('name'),
+                'photo' => $sql_get_user_data->Fields('photo'),
+                'rating' => $sql_get_user_data->Fields('rating')
+            ]);
         } else {
             result_text(1, 'Ошибка сервера');
         }
@@ -353,23 +349,20 @@ function GetUserName()
 function GetTitleForUserAdsComp()
 {
     global $db;
-    $authToken = getBearerToken();
 
     if (isset($_GET['id']) && $_GET['id'] != '') {
 
         $id = $_GET['id'];
 
-        if ($authToken) {
-            if (SqlGetUserId() == $id) {
-                result_text(0, 'Мои объявления');
-            } else {
-                $sql_get_user_name_surname = $db->Execute('select name, surname from `user_contacts` where user_id=' . $id);
+        if (SqlGetUserId() === $id) {
+            result_text(0, 'Мои объявления');
+        } else {
+            $sql_get_user_name_surname = $db->Execute('select name, surname from `user_contacts` where user_id=' . $id);
 
-                if ($sql_get_user_name_surname && ($sql_get_user_name_surname->RecordCount() > 0)) {
-                    result_text(0, 'Объявления пользователя - ' . $sql_get_user_name_surname->Fields('name') . ' ' . $sql_get_user_name_surname->Fields('surname'));
-                } else {
-                    result_text(1, 'Ошибка сервера');
-                }
+            if ($sql_get_user_name_surname && ($sql_get_user_name_surname->RecordCount() > 0)) {
+                result_text(0, 'Объявления пользователя - ' . $sql_get_user_name_surname->Fields('name') . ' ' . $sql_get_user_name_surname->Fields('surname'));
+            } else {
+                result_text(1, 'Ошибка сервера');
             }
         }
     } else {
@@ -382,12 +375,11 @@ function GetUserRating()
     global $db;
     $authToken = getBearerToken();
 
-    if ((isset($_GET['case_id']) && $_GET['case_id'] != '') || ($authToken)) {
+    if ((isset($_GET['case_id']) && $_GET['case_id'] != '') || $authToken) {
         if (isset($_GET['case_id']) && $_GET['case_id'] != '') {
             $case_id = $_GET['case_id'];
             $sql_get_user_id = $db->Execute('select user_id from `user_showcase` where id=' . intval($case_id));
-        }
-        if ($authToken) {
+        } else if ($authToken) {
             $sql_get_user_id = $db->Execute('select user_id from `user_tokens` where authToken=' . QPrepStr($authToken));
         }
         if ($sql_get_user_id) {
@@ -472,32 +464,32 @@ function GetUserInfo()
     $authToken = getBearerToken();
 
     if ($authToken) {
-        $sql_select_user_info = $db->Execute('select name, surname, phone, phone2, area, telegram, vk, facebook, instagram from `user_contacts` where user_id=' . SqlGetUserId());
+        $sql_select_user_info = $db->Execute('select 
+        photo,
+        name, 
+        surname, 
+        phone, 
+        phone2, 
+        area, 
+        telegram, 
+        vk, 
+        facebook, 
+        instagram 
+        from `user_contacts` where user_id=' . SqlGetUserId());
 
         if ($sql_select_user_info && ($sql_select_user_info->RecordCount() > 0)) {
-            result_user_info($sql_select_user_info->Fields('name'), $sql_select_user_info->Fields('surname'), $sql_select_user_info->Fields('phone'), $sql_select_user_info->Fields('phone2'), $sql_select_user_info->Fields('area'), $sql_select_user_info->Fields('telegram'), $sql_select_user_info->Fields('vk'), $sql_select_user_info->Fields('facebook'), $sql_select_user_info->Fields('instagram'));
-        } else {
-            result_text(1, 'Ошибка сервера');
-        }
-    } else {
-        result_text(1, 'Ошибка сервера');
-    }
-}
-
-function GetUserPhoto()
-{
-    global $db;
-    $authToken = getBearerToken();
-
-    if ($authToken) {
-        if (SqlGetUserId()) {
-            $sql_select_user_photo = $db->Execute('select photo from `user_contacts` where user_id=' . SqlGetUserId());
-            $default_photo = '../assets/users_images/user_profile_image_default.jpg';
-            if ($sql_select_user_photo && ($sql_select_user_photo->RecordCount() > 0)) {
-                result_text(0, $sql_select_user_photo->Fields('photo'));
-            } else {
-                result_text(0, $default_photo);
-            }
+            result_user_info(
+                $sql_select_user_info->Fields('photo'), 
+                $sql_select_user_info->Fields('name'), 
+                $sql_select_user_info->Fields('surname'), 
+                $sql_select_user_info->Fields('phone'), 
+                $sql_select_user_info->Fields('phone2'), 
+                $sql_select_user_info->Fields('area'), 
+                $sql_select_user_info->Fields('telegram'), 
+                $sql_select_user_info->Fields('vk'), 
+                $sql_select_user_info->Fields('facebook'), 
+                $sql_select_user_info->Fields('instagram')
+            );
         } else {
             result_text(1, 'Ошибка сервера');
         }
