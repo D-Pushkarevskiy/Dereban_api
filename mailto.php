@@ -3,16 +3,10 @@
 require('./includes/phpmailer/class.phpmailer.php');
 require('./includes/phpmailer/class.smtp.php');
 
-function Mailto($email, $url) {
+function Mailto($email, $subject, $content) {
     $mail = new PHPMailer();
-    $subject = ("Подтверждение регистрации на сайте 'Dereban.ua'");
-    $content = "<div style='text-align: center; font-size: 18px;'>"
-            . "<b>"
-            . "Для подтверждения регистрации на сайте 'Dereban.ua' перейдите по ссылке: "
-            . "</b>"
-            . "<br>"
-            . "<a href=".$url." target='_blank' style='color: #3f51b5;'>Подтвердить регистрацию</a>"
-            . "</div>";
+    $subject = $subject;
+    $content = $content;
     $mail->IsSMTP();
     $mail->SMTPDebug = 0;
     $mail->SMTPAuth = TRUE;
@@ -31,7 +25,9 @@ function Mailto($email, $url) {
     $mail->MsgHTML($content);
     $mail->IsHTML(true);
 
-    $mail->Send();
+    if($mail->Send()){
+        return true;
+    } else {
+        return false;
+    }
 }
-
-?>

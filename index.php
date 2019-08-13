@@ -64,11 +64,17 @@ if (isset($_GET['func'])) {
         case 'auth':
             Auth();
             break;
+        case 'refresh_password_request':
+            RefreshPasswordRequest();
+            break;
+        case 'refresh_password':
+            RefreshPassword();
+            break;
         case 'conf_register':
             Conf_register();
             break;
         case 'mailto':
-            Mailto($param1, $param2);
+            Mailto($param1, $param2, $param3);
             break;
         case 'get_user_name':
             GetUserName();
@@ -108,6 +114,9 @@ if (isset($_GET['func'])) {
             break;
         case 'showcase_get_rating':
             ShowCaseGetRating();
+            break;
+        case 'get_active_rating':
+            GetActiveRating();
             break;
         case 'showcase_toggle_favorite':
             ShowCaseToggleFavorite();
@@ -243,11 +252,22 @@ function Auth()
                     //Добавляем информацию о пользователе в таблицу user_contacts
                     $login = explode('@', $user_login)[0];
                     $sql_add_user_contacts_data = $db->Execute("insert into `user_contacts`(user_id,name) values (" . $sql_get_user_id->Fields('id') . "," . QPrepStr($login) . ")");
-                    if ($sql_set_user_id) {
+                    if ($sql_set_user_id && $sql_add_user_contacts_data) {
                         //Отправляем e-mail
-                        Mailto(PrepStr($user_login), $url);
-                        //Отправляем результат на фронтенд
-                        result_text(2, 'На ваш e-mail (' . $user_login . ') отправлено письмо с подтверждением регистрации');
+                        $subject = "Подтверждение регистрации на сайте 'Dereban.ua'";
+                        $content = "<div style='text-align: center; font-size: 18px;'>"
+                            . "<b>"
+                            . "Для подтверждения регистрации на сайте 'Dereban.ua' перейдите по ссылке: "
+                            . "</b>"
+                            . "<br>"
+                            . "<a href=" . $url . " target='_blank' style='color: #3f51b5;'>Подтвердить регистрацию</a>"
+                            . "</div>";
+                        if (Mailto(PrepStr($user_login), $subject, $content)) {
+                            //Отправляем результат на фронтенд
+                            result_text(2, 'На ваш e-mail (' . $user_login . ') отправлено письмо с подтверждением регистрации');
+                        } else {
+                            result_text(1, 'Ошибка сервера');
+                        }
                     } else {
                         result_text(1, 'Ошибка сервера');
                     }
@@ -257,6 +277,89 @@ function Auth()
             } else {
                 result_text(1, 'Ошибка сервера');
             }
+        }
+    } else {
+        result_text(1, 'Ошибка сервера');
+    }
+}
+
+function RefreshPasswordRequest()
+{
+    global $db;
+
+    if (isset($_GET['email']) && $_GET['email'] != '') {
+        $user_email = $_GET['email'];
+
+        $sql_check_user_email = $db->Execute("select email from `user` where email=" . QPrepStr($user_email));
+
+        if ($sql_check_user_email && ($sql_check_user_email->RecordCount() > 0)) {
+            $url = 'http://localhost:4200/refresh-password/' . gmmktime();
+            $sql_get_user_id = $db->Execute('select id from `user` where email=' . QPrepStr($user_email));
+            if ($sql_get_user_id && ($sql_get_user_id->RecordCount() > 0)) {
+                $sql_add_passToken = $db->Execute('update `user_tokens` set passToken=' . intval(gmmktime()) . ' where user_id=' . $sql_get_user_id->Fields('id'));
+                if ($sql_add_passToken) {
+                    $subject = "Сброс пароля на сайте 'Dereban.ua'";
+                    $content = "Для сброса пароля, передите по ссылке: " . $url;
+                    if (Mailto($user_email, $subject, $content)) {
+                        result_text(2, 'На ваш e-mail (' . $user_email . ') отправлено письмо с информацией о сбросе пароля');
+                    } else {
+                        result_text(1, 'Ошибка сервера');
+                    }
+                } else {
+                    result_text(1, 'Ошибка сервера');
+                }
+            } else {
+                result_text(1, 'Ошибка сервера');
+            }
+        } else {
+            result_text(1, 'Введенный e-mail не зарегистрирован на сайте');
+        }
+    }
+}
+
+function RefreshPassword()
+{
+    global $db;
+
+    if (isset($_GET['current']) && $_GET['current'] != '' && isset($_GET['new']) && $_GET['new'] != '' && $_GET['token'] != '') {
+
+        $current_password = $_GET['current'];
+        $new_password = $_GET['new'];
+        $token = $_GET['token'];
+
+        $sql_check_pass = 'select '
+            . 'u.password '
+            . 'from `user` u '
+            . 'inner join `user_tokens` ut on u.id=ut.user_id '
+            . 'where ut.passToken=' . QPrepStr($token);
+        $query = $db->Execute($sql_check_pass);
+
+        $sql_get_user_id = $db->Execute('select user_id from `user_tokens` where passToken=' . QPrepStr($token));
+
+        if ($query && ($query->RecordCount() > 0)) {
+            if ($current_password != $query->Fields('password')) {
+                //Ошибка ввода пароля
+                result_text(3, 'Проверьте правильность написания пароля');
+            } else {
+                //Успешная смена пароля
+                $sql_delete_passToken = 'update `user_tokens` set passToken=null where passToken=' . QPrepStr($token);
+                $query = $db->Execute($sql_delete_passToken);
+                if ($query) {
+                    $sql_update_password = 'update `user` set password=' . QPrepStr($new_password) . ' where id=' . intval($sql_get_user_id->Fields('user_id'));
+                    $query = $db->Execute($sql_update_password);
+                    if ($query) {
+                        result_text(0, "Сброс пароля прошел успешно!"
+                            . " "
+                            . "Для продолжения пожалуйста авторизуйтесь с новым паролем");
+                    } else {
+                        result_text(1, 'Ошибка сервера');
+                    }
+                } else {
+                    result_text(1, 'Ошибка сервера');
+                }
+            }
+        } else {
+            result_text(2, 'Смена пароля была совершена ранее');
         }
     } else {
         result_text(1, 'Ошибка сервера');
@@ -424,8 +527,8 @@ function AddUserInfo()
     if ($authToken) {
         if (isset($data['user']) && ($user = $data['user']) && isset($data['contacts']) && ($contacts = $data['contacts']) && isset($data['social']) && ($social = $data['social'])) {
 
-            if ($contacts['phone2'] === '') {
-                $phone2 = 'NULL';
+            if (empty($contacts['phone2']) || isset($contacts['phone2']) || $contacts['phone2'] === '' || $contacts['phone2'] === null) {
+                $phone2 = 'null';
             } else {
                 $phone2 = intval($contacts['phone2']);
             }
@@ -479,15 +582,15 @@ function GetUserInfo()
 
         if ($sql_select_user_info && ($sql_select_user_info->RecordCount() > 0)) {
             result_user_info(
-                $sql_select_user_info->Fields('photo'), 
-                $sql_select_user_info->Fields('name'), 
-                $sql_select_user_info->Fields('surname'), 
-                $sql_select_user_info->Fields('phone'), 
-                $sql_select_user_info->Fields('phone2'), 
-                $sql_select_user_info->Fields('area'), 
-                $sql_select_user_info->Fields('telegram'), 
-                $sql_select_user_info->Fields('vk'), 
-                $sql_select_user_info->Fields('facebook'), 
+                $sql_select_user_info->Fields('photo'),
+                $sql_select_user_info->Fields('name'),
+                $sql_select_user_info->Fields('surname'),
+                $sql_select_user_info->Fields('phone'),
+                $sql_select_user_info->Fields('phone2'),
+                $sql_select_user_info->Fields('area'),
+                $sql_select_user_info->Fields('telegram'),
+                $sql_select_user_info->Fields('vk'),
+                $sql_select_user_info->Fields('facebook'),
                 $sql_select_user_info->Fields('instagram')
             );
         } else {
@@ -808,6 +911,32 @@ function ShowCaseGetRating()
     }
 }
 
+function GetActiveRating()
+{
+    global $db;
+    $authToken = getBearerToken();
+
+    if ($authToken) {
+        $sql_get_case_rating_status = $db->Execute('select case_id, rating_value from `case_rating` where user_id=' . SqlGetUserId());
+
+        if ($sql_get_case_rating_status && $sql_get_case_rating_status->Fields('case_id') != null) {
+            $case_id_arr = [];
+            while (!$sql_get_case_rating_status->EOF) {
+                $case_id_arr[] = [
+                    'id' => $sql_get_case_rating_status->Fields('case_id'),
+                    'value' => $sql_get_case_rating_status->Fields('rating_value')
+                ];
+                $sql_get_case_rating_status->MoveNext();
+            }
+            result_text(0, $case_id_arr);
+        } else {
+            result_text(1, 'Не выбранно ни одного активного объявления');
+        }
+    } else {
+        result_text(1, 'Ошибка сервера');
+    }
+}
+
 function ShowCaseToggleFavorite()
 {
     global $db;
@@ -845,8 +974,6 @@ function GetActiveFavorite()
     $authToken = getBearerToken();
 
     if ($authToken) {
-        $authToken = QPrepStr($authToken);
-
         $sql_select_favorite_case_id = $db->Execute('select case_id from `case_favorite` where user_id=' . SqlGetUserId());
         if ($sql_select_favorite_case_id && $sql_select_favorite_case_id->Fields('case_id') != null) {
             $case_id_arr = [];
