@@ -124,6 +124,9 @@ if (isset($_GET['func'])) {
         case 'get_active_favorite':
             GetActiveFavorite();
             break;
+        case 'is_owner':
+            IsOwner();
+            break;
     }
 }
 
@@ -167,11 +170,11 @@ function Auth()
         $user_login = $_GET['login'];
         $user_password = $_GET['password'];
 
-        //Запрос на поле пароля имейл которого совпадает с введенным пользователем
+        // Запрос на поле пароля имейл которого совпадает с введенным пользователем
         $sql_check_data = 'select password from `user` where email=' . QPrepStr($user_login);
         $query = $db->Execute($sql_check_data);
 
-        //Проверка на существование запроса и на не нулевое значение количества записей
+        // Авторизация, иначе регистрация
         if ($query && ($query->RecordCount() > 0)) {
 
             $sql_check_token = 'select '
@@ -180,10 +183,17 @@ function Auth()
                 . 'inner join `user` u on ut.user_id=u.id '
                 . 'where u.email=' . QPrepStr($user_login);
             $query_check_token = $db->Execute($sql_check_token);
-            //вход в существующий аккаунт
+            // Вход в существующий аккаунт
             if ($user_password != $query->Fields('password')) {
-                //Ошибка ввода пароля
-                result_text(3, 'Проверьте правильность написания e-mail-а и пароля');
+                // Ошибка ввода пароля
+                // Проверка кол-ва неправильных вводов пароля
+                $sql_get_login_attempt = $db->Execute("select login_attempts from `user` where email=" . QPrepStr($user_login));
+                if ($sql_get_login_attempt && $sql_get_login_attempt->Fields('login_attempts') >= 5) {
+                    result_text(4, 'Пароль не верный. Вы можете воспользоваться функцией "забыли пароль?"');
+                } else {
+                    $sql_add_login_attempt = $db->Execute('update `user` set login_attempts=login_attempts + 1 where email=' . QPrepStr($user_login));
+                    result_text(3, 'Проверьте правильность написания e-mail-а и пароля');
+                }
             } else {
                 if ($query_check_token && ($query_check_token->RecordCount() > 0)) {
                     if ($query_check_token->Fields('regToken') != null) {
@@ -201,25 +211,34 @@ function Auth()
                         $sql_get_user_id = $db->Execute("select id from `user` where email=" . QPrepStr($user_login));
 
                         if ($sql_get_user_id) {
-                            //Занесение токена в базу данных
-                            $sql_add_auth_token = 'update `user_tokens` set authToken=' . QPrepStr($jwt) . ' where user_id=' . $sql_get_user_id->Fields('id');
-                            $query_add_auth_token = $db->Execute($sql_add_auth_token);
-
-                            if ($query_add_auth_token) {
-
-                                $sql_check_date_login = $db->Execute('select last_login_date from `user` where email=' . QPrepStr($user_login));
-
-                                if ($sql_check_date_login && ($sql_check_date_login->Fields('last_login_date') != NULL)) {
-                                    //Успешная авторизация
-                                    result_text(0, $jwt);
-                                } else {
-                                    //Успешная авторизация в первый раз
-                                    result_text(0, $jwt, false);
-                                }
-
-                                $sql_add_date_login = $db->Execute('update `user` set last_login_date=' . intval(gmmktime()) . ' where email=' . QPrepStr($user_login));
+                            // Проверка на существование authToken-а
+                            $sql_auth_token = $db->Execute("select authToken from `user_tokens` where id=" . $sql_get_user_id->Fields('id'));
+                            if ($sql_auth_token && ($sql_auth_token->Fields('authToken') != NULL)) {
+                                //Успешная авторизация
+                                result_text(0, $sql_auth_token->Fields('authToken'));
+                                $sql_add_login_attempt = $db->Execute('update `user` set login_attempts=0 where email=' . QPrepStr($user_login));
                             } else {
-                                result_text(1, 'Ошибка сервера');
+                                //Занесение токена в базу данных
+                                $sql_add_auth_token = 'update `user_tokens` set authToken=' . QPrepStr($jwt) . ' where user_id=' . $sql_get_user_id->Fields('id');
+                                $query_add_auth_token = $db->Execute($sql_add_auth_token);
+
+                                if ($query_add_auth_token) {
+
+                                    $sql_check_date_login = $db->Execute('select last_login_date from `user` where email=' . QPrepStr($user_login));
+
+                                    if ($sql_check_date_login && ($sql_check_date_login->Fields('last_login_date') != NULL)) {
+                                        //Успешная авторизация
+                                        result_text(0, $jwt);
+                                    } else {
+                                        //Успешная авторизация в первый раз
+                                        result_text(0, $jwt, false);
+                                    }
+
+                                    $sql_add_date_login = $db->Execute('update `user` set last_login_date=' . intval(gmmktime()) . ' where email=' . QPrepStr($user_login));
+                                    $sql_add_login_attempt = $db->Execute('update `user` set login_attempts=0 where email=' . QPrepStr($user_login));
+                                } else {
+                                    result_text(1, 'Ошибка сервера');
+                                }
                             }
                         } else {
                             result_text(1, 'Ошибка сервера');
@@ -987,5 +1006,24 @@ function GetActiveFavorite()
         }
     } else {
         result_text(1, 'Ошибка сервера');
+    }
+}
+
+function IsOwner()
+{
+    global $db;
+    if (isset($_GET['id']) && $_GET['id'] != '') {
+        $case_id = $_GET['id'];
+        $sql_is_owner = $db->Execute('select case_name from `user_showcase` where user_id=' . SqlGetUserId() . ' and id=' . intval($case_id));
+        if ($sql_is_owner && $sql_is_owner->Fields('case_name') != '') {
+            echo json_encode(true);
+            return true;
+        } else {
+            echo json_encode(false);
+            return false;
+        }
+    } else {
+        echo json_encode(false);
+        return false;
     }
 }
