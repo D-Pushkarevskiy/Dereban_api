@@ -17,7 +17,7 @@ define('PHOTO_PATH', 'C:/OSpanel/OSPanel/domains/dereban/src/assets/users_images
 define('PHOTO_PATH_ANG', '../assets/users_images/');
 
 //Пути сохранения фотографий товара пользователя
-define('ADS_IMAGES_PATH', 'C:/OSpanel/OSPanel/domains/dereban/src/assets/users_images/showcase_photos');
+define('ADS_IMAGES_PATH', 'C:/OSpanel/OSPanel/domains/dereban/src/assets/users_images/showcase_photos/');
 define('ADS_IMAGES_PATH_ANG', '../assets/users_images/showcase_photos/');
 
 use \Firebase\JWT\JWT;
@@ -126,6 +126,15 @@ if (isset($_GET['func'])) {
             break;
         case 'is_owner':
             IsOwner();
+            break;
+        case 'get_case':
+            GetCase();
+            break;
+        case 'showcase_toggle_active':
+            ShowCaseToggleActive();
+            break;
+        case 'delete_showcase':
+            DeleteShowCase();
             break;
     }
 }
@@ -436,6 +445,8 @@ function SqlGetUserId()
         } else {
             return false;
         }
+    } else {
+        return false;
     }
 }
 
@@ -541,9 +552,8 @@ function AddUserInfo()
 
     $request_body = file_get_contents('php://input');
     $data = json_decode($request_body, true);
-    $authToken = getBearerToken();
 
-    if ($authToken) {
+    if (SqlGetUserId()) {
         if (isset($data['user']) && ($user = $data['user']) && isset($data['contacts']) && ($contacts = $data['contacts']) && isset($data['social']) && ($social = $data['social'])) {
 
             if (empty($contacts['phone2']) || isset($contacts['phone2']) || $contacts['phone2'] === '' || $contacts['phone2'] === null) {
@@ -573,7 +583,7 @@ function AddUserInfo()
                 result_text(1, 'Ошибка сервера');
             }
         } else {
-            result_text(1, 'Ошибка сервера 228');
+            result_text(1, 'Ошибка сервера');
         }
     } else {
         result_text(1, 'Ошибка сервера');
@@ -583,9 +593,8 @@ function AddUserInfo()
 function GetUserInfo()
 {
     global $db;
-    $authToken = getBearerToken();
 
-    if ($authToken) {
+    if (SqlGetUserId()) {
         $sql_select_user_info = $db->Execute('select 
         photo,
         name, 
@@ -623,16 +632,11 @@ function GetUserInfo()
 function SetUserPhoto()
 {
     global $db;
-    $authToken = getBearerToken();
 
     if (isset($_FILES['photo']) && $_FILES['photo'] != '') {
 
-        if ($authToken) {
-            if (SqlGetUserId()) {
-                include_once './user_photo.php';
-            } else {
-                result_text(1, 'Ошибка сервера');
-            }
+        if (SqlGetUserId()) {
+            include_once './user_photo.php';
         } else {
             result_text(1, 'Ошибка сервера');
         }
@@ -662,15 +666,10 @@ function RemoveAuthToken()
 function SaveShowcasePhoto()
 {
     global $db;
-    $authToken = getBearerToken();
 
     if (isset($_FILES['photo']) && $_FILES['photo'] != '') {
-        if ($authToken) {
-            if (SqlGetUserId()) {
-                include_once './showcase_photo.php';
-            } else {
-                result_text(1, 'Ошибка сервера');
-            }
+        if (SqlGetUserId()) {
+            include_once './showcase_photo.php';
         } else {
             result_text(1, 'Ошибка сервера');
         }
@@ -685,9 +684,8 @@ function SaveShowcase()
 
     $request_body = file_get_contents('php://input');
     $data = json_decode($request_body, true);
-    $authToken = getBearerToken();
 
-    if ($authToken) {
+    if (SqlGetUserId()) {
         if (isset($data['main']) && ($main = $data['main']) && isset($data['options']) && ($options = $data['options']) && isset($data['description']) && ($description = $data['description']) && isset($data['additionalPhotos']) && ($additionalPhotos = $data['additionalPhotos'])) {
 
             $filePath = $_GET['file_path'];
@@ -706,19 +704,39 @@ function SaveShowcase()
             $upd[] = ' ' . QPrepStr($additionalPhotos['addPhotosLink']);
 
             if (SqlGetUserId()) {
-                $sql_add_showcase = $db->Execute('insert into `user_showcase` (user_id, adding_time, photo_url, case_name, price, type, full_type, detail_type, state, wheel_size, velo_type, direction, description, additionalPhotos) values ('
-                    . SqlGetUserId() . ','
-                    . gmmktime() . ','
-                    . QPrepStr($filePath) . ','
-                    . implode(',', $upd)
-                    . ')');
-
-                $sql_select_showcase_id = $db->Execute('select id from `user_showcase` where adding_time=' . gmmktime());
-
-                if ($sql_add_showcase) {
-                    result_text(0, 'Объявление добавлено');
+                if ($_GET['edit'] && $_GET['edit'] == true) {
+                    $sql_update_showcase = $db->Execute('update `user_showcase` set '
+                        . 'update_time=' . gmmktime() . ','
+                        . 'photo_url=' . QPrepStr($filePath) . ','
+                        . 'case_name=' . QPrepStr($main['name']) . ','
+                        . 'price=' . intval($main['price']) . ','
+                        . 'type=' . intval($options['type']) . ','
+                        . 'full_type=' . intval($options['fullType']) . ','
+                        . 'detail_type=' . intval($options['detailType']) . ','
+                        . 'state=' . intval($options['state']) . ','
+                        . 'wheel_size=' . intval($options['wheelSize']) . ','
+                        . 'velo_type=' . intval($options['veloType']) . ','
+                        . 'direction=' . intval($options['direction']) . ','
+                        . 'description=' . QPrepStr($description['description']) . ','
+                        . 'additionalPhotos=' . QPrepStr($additionalPhotos['addPhotosLink'])
+                        . ' where id=' . $_GET['id']);
+                    if ($sql_update_showcase) {
+                        result_text(0, 'Изменения сохранены');
+                    } else {
+                        result_text(1, 'Ошибка сервера');
+                    }
                 } else {
-                    result_text(1, 'Ошибка сервера');
+                    $sql_add_showcase = $db->Execute('insert into `user_showcase` (user_id, adding_time, photo_url, case_name, price, type, full_type, detail_type, state, wheel_size, velo_type, direction, description, additionalPhotos) values ('
+                        . SqlGetUserId() . ','
+                        . gmmktime() . ','
+                        . QPrepStr($filePath) . ','
+                        . implode(',', $upd)
+                        . ')');
+                    if ($sql_add_showcase) {
+                        result_text(0, 'Объявление добавлено');
+                    } else {
+                        result_text(1, 'Ошибка сервера');
+                    }
                 }
             } else {
                 result_text(1, 'Ошибка сервера');
@@ -775,6 +793,7 @@ function GetShowCases()
         . 'us.direction, '
         . 'us.description, '
         . 'us.additionalPhotos, '
+        . 'us.active, '
         . 'uc.name, '
         . 'uc.photo, '
         . 'uc.surname, '
@@ -828,6 +847,7 @@ function GetShowCases()
                     'direction' => $sql_get_show_cases->Fields('direction'),
                     'description' => $sql_get_show_cases->Fields('description'),
                     'additionalPhotos' => $sql_get_show_cases->Fields('additionalPhotos'),
+                    'active' => $sql_get_show_cases->Fields('active'),
                     'case_rating' => $sql_get_show_case_rating->Fields('sum'),
                     'user_rating' => $user_rating,
                     'user_photo' => $sql_get_show_cases->Fields('photo'),
@@ -865,13 +885,11 @@ function FormatDate($date)
 function ShowCaseChangeRating()
 {
     global $db;
-    $authToken = getBearerToken();
 
-    if ($authToken) {
+    if (SqlGetUserId()) {
 
         $case_id = intval($_GET['case_id']);
         $type = intval($_GET['type']);
-        $authToken = QPrepStr($authToken);
 
         // id пользователя изменившего рейтинг
         $cur_user_id = SqlGetUserId();
@@ -933,9 +951,8 @@ function ShowCaseGetRating()
 function GetActiveRating()
 {
     global $db;
-    $authToken = getBearerToken();
 
-    if ($authToken) {
+    if (SqlGetUserId()) {
         $sql_get_case_rating_status = $db->Execute('select case_id, rating_value from `case_rating` where user_id=' . SqlGetUserId());
 
         if ($sql_get_case_rating_status && $sql_get_case_rating_status->Fields('case_id') != null) {
@@ -959,11 +976,9 @@ function GetActiveRating()
 function ShowCaseToggleFavorite()
 {
     global $db;
-    $authToken = getBearerToken();
 
-    if (isset($_GET['case_id']) && $_GET['case_id'] != '' && $authToken) {
+    if (isset($_GET['case_id']) && $_GET['case_id'] != '' && SqlGetUserId()) {
         $case_id = intval($_GET['case_id']);
-        $authToken = QPrepStr($authToken);
 
         $sql_get_case_favorite_status = $db->Execute('select case_id from `case_favorite` where case_id=' . $case_id . ' and user_id=' . SqlGetUserId());
 
@@ -990,9 +1005,8 @@ function ShowCaseToggleFavorite()
 function GetActiveFavorite()
 {
     global $db;
-    $authToken = getBearerToken();
 
-    if ($authToken) {
+    if (SqlGetUserId()) {
         $sql_select_favorite_case_id = $db->Execute('select case_id from `case_favorite` where user_id=' . SqlGetUserId());
         if ($sql_select_favorite_case_id && $sql_select_favorite_case_id->Fields('case_id') != null) {
             $case_id_arr = [];
@@ -1025,5 +1039,95 @@ function IsOwner()
     } else {
         echo json_encode(false);
         return false;
+    }
+}
+
+function GetCase()
+{
+    global $db;
+
+    if (isset($_GET['id']) && $_GET['id'] != '') {
+        $sql_get_show_case = $db->Execute('select `id`, `user_id`, `adding_time`, `case_name`, `photo_url`, `price`, `type`, `full_type`, `detail_type`, `state`, `wheel_size`, `velo_type`, `direction`, `description`, `additionalPhotos` from `user_showcase` where id=' . intval($_GET['id']));
+
+        if ($sql_get_show_case && ($sql_get_show_case->RecordCount() > 0)) {
+            if ($sql_get_show_case->Fields('case_name') != null) {
+                $show_case_result = [
+                    'id' => $sql_get_show_case->Fields('id'),
+                    'user_id' => $sql_get_show_case->Fields('user_id'),
+                    'adding_time' => FormatDate($sql_get_show_case->Fields('adding_time')),
+                    'case_name' => $sql_get_show_case->Fields('case_name'),
+                    'photo_url' => ADS_IMAGES_PATH_ANG . $sql_get_show_case->Fields('photo_url'),
+                    'price' => $sql_get_show_case->Fields('price'),
+                    'type' => $sql_get_show_case->Fields('type'),
+                    'full_type' => $sql_get_show_case->Fields('full_type'),
+                    'detail_type' => $sql_get_show_case->Fields('detail_type'),
+                    'state' => $sql_get_show_case->Fields('state'),
+                    'wheel_size' => $sql_get_show_case->Fields('wheel_size'),
+                    'velo_type' => $sql_get_show_case->Fields('velo_type'),
+                    'direction' => $sql_get_show_case->Fields('direction'),
+                    'description' => $sql_get_show_case->Fields('description'),
+                    'additionalPhotos' => $sql_get_show_case->Fields('additionalPhotos'),
+                ];
+                result_text(0, $show_case_result);
+            } else {
+                result_text(1, 'Ошибка сервера');
+            }
+        } else {
+            result_text(1, 'Ошибка сервера');
+        }
+    } else {
+        result_text(1, 'Ошибка сервера');
+    }
+}
+
+function ShowCaseToggleActive()
+{
+    global $db;
+
+    if (isset($_GET['case_id']) && $_GET['case_id'] != '' && SqlGetUserId()) {
+        $case_id = intval($_GET['case_id']);
+
+        $sql_get_case_active_status = $db->Execute('select active from `user_showcase` where id=' . $case_id . ' and user_id=' . SqlGetUserId());
+
+        if ($sql_get_case_active_status->Fields('active') != null) {
+            if ($sql_get_case_active_status->Fields('active') == 1) {
+                $sql_toggle_case_active_status = $db->Execute('update `user_showcase` set active=0 where id=' . $case_id . ' and user_id=' . SqlGetUserId());
+                if ($sql_toggle_case_active_status) {
+                    result_text(0, 'Объявление деактивировано');
+                } else {
+                    result_text(2, 'Ошибка сервера');
+                }
+            } else if ($sql_get_case_active_status->Fields('active') == 0) {
+                $sql_toggle_case_active_status = $db->Execute('update `user_showcase` set active=1 where id=' . $case_id . ' and user_id=' . SqlGetUserId());
+                if ($sql_toggle_case_active_status) {
+                    result_text(1, 'Объявление активировано');
+                } else {
+                    result_text(2, 'Ошибка сервера');
+                }
+            } else {
+                result_text(2, 'Ошибка сервера');
+            }
+        } else {
+            result_text(2, 'Ошибка сервера');
+        }
+    } else {
+        result_text(2, 'Ошибка сервера');
+    }
+}
+
+function DeleteShowCase()
+{
+    global $db;
+
+    if (isset($_GET['case_id']) && $_GET['case_id'] != '' && SqlGetUserId()) {
+        $case_id = $_GET['case_id'];
+        $sql_delete_show_case = $db->Execute('delete from `user_showcase` where id=' . $case_id . ' and user_id=' . SqlGetUserId());
+        if ($sql_delete_show_case) {
+            result_text(0, 'Объявление удалено успешно');
+        } else {
+            result_text(1, 'Ошибка сервера');
+        }
+    } else {
+        result_text(1, 'Ошибка сервера');
     }
 }

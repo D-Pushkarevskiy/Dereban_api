@@ -1,6 +1,6 @@
 <?php
 
-$destination = ADS_IMAGES_PATH . '/';
+$destination = ADS_IMAGES_PATH;
 $date = gmmktime();
 $file_path = SqlGetUserId() . '/';
 $user_photo_path = 'date' . $date . '-user_id-' . SqlGetUserId() . '.jpg';
