@@ -674,7 +674,7 @@ function SaveShowcasePhoto()
             result_text(1, 'Ошибка сервера');
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(0, '');
     }
 }
 
