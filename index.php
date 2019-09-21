@@ -667,7 +667,7 @@ function SaveShowcasePhoto()
 {
     global $db;
 
-    if (isset($_FILES['photo']) && $_FILES['photo'] != '') {
+    if (isset($_FILES['photo']) && $_FILES['photo'] !== '') {
         if (SqlGetUserId()) {
             include_once './showcase_photo.php';
         } else {
@@ -835,6 +835,7 @@ function GetShowCases()
                     'id' => $sql_get_show_cases->Fields('id'),
                     'user_id' => $sql_get_show_cases->Fields('user_id'),
                     'adding_time' => FormatDate($sql_get_show_cases->Fields('adding_time')),
+                    'adding_time_raw' => $sql_get_show_cases->Fields('adding_time'),
                     'case_name' => $sql_get_show_cases->Fields('case_name'),
                     'photo_url' => ADS_IMAGES_PATH_ANG . $sql_get_show_cases->Fields('photo_url'),
                     'price' => $sql_get_show_cases->Fields('price'),
