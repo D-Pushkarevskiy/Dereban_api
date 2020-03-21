@@ -14,14 +14,14 @@ if (is_uploaded_file($photo)) {
         // Записываем имя фото в базу
         $sql_add_user_data = $db->Execute("update `user_contacts` set photo=" . QPrepStr($photo_name) . " where `user_id`=" . SqlGetUserId());
         if ($sql_add_user_data) {
-            result_text(0, 'Фотография сохранена успешно');
+            result_text(0, 'PHOTO_SAVED');
         } else {
-            result_text(1, 'Ошибка сервера');
+            result_text(1, 'INTERNAL_ERROR');
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 } else {
-    result_text(1, 'Ошибка сервера');
+    result_text(1, 'INTERNAL_ERROR');
 }
 ?>

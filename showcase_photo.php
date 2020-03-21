@@ -23,9 +23,9 @@ if (is_uploaded_file($photo)) {
     if (move_uploaded_file($photo, $destination . $user_photo_path)) {
         result_text(0, $file_path . $user_photo_path);
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'NO_HAVE_PERMISSION_DIRECTORY');
     }
 } else {
-    result_text(1, 'Ошибка сервера');
+    result_text(1, 'FAILED_TO_UPLOAD_FILE');
 }
 ?>

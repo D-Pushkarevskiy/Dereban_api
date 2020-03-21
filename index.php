@@ -13,11 +13,11 @@ header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers
 // Ключ шифрования токенов
 define('SECRET_KEY', '@p5U-xMtZbt=\vf6]xJy$q/(vJX4\y');
 // Пути сохранения фотографии пользователя
-define('PHOTO_PATH', 'C:/OSpanel/OSPanel/domains/dereban/src/assets/users_images/');
+define('PHOTO_PATH', '/Applications/MAMP/htdocs/Dereban/src/assets/users_images/');
 define('PHOTO_PATH_ANG', '../assets/users_images/');
 
 // Пути сохранения фотографий товара пользователя
-define('ADS_IMAGES_PATH', 'C:/OSpanel/OSPanel/domains/dereban/src/assets/users_images/showcase_photos/');
+define('ADS_IMAGES_PATH',  '/Applications/MAMP/htdocs/Dereban/src/assets/users_images/showcase_photos/');
 define('ADS_IMAGES_PATH_ANG', '../assets/users_images/showcase_photos/');
 
 // Base64 logo
@@ -178,7 +178,6 @@ function Auth()
     // Проверка на установление переменной значением и на ее пустоту (login, password)
     if (isset($_GET['login']) && $_GET['login'] != '' && isset($_GET['password']) && $_GET['password'] != '') {
 
-        // Превращаем объект в строку ... (не очень)
         $user_login = $_GET['login'];
         $user_password = $_GET['password'];
 
@@ -201,15 +200,15 @@ function Auth()
                 // Проверка кол-ва неправильных вводов пароля
                 $sql_get_login_attempt = $db->Execute("select login_attempts from `user` where email=" . QPrepStr($user_login));
                 if ($sql_get_login_attempt && $sql_get_login_attempt->Fields('login_attempts') >= 5) {
-                    result_text(4, 'Пароль не верный. Вы можете воспользоваться функцией "забыли пароль?"');
+                    result_text(4, 'LOGIN_DATA_INCORRECT_ATTEMPTS');
                 } else {
                     $sql_add_login_attempt = $db->Execute('update `user` set login_attempts=login_attempts + 1 where email=' . QPrepStr($user_login));
-                    result_text(3, 'Проверьте правильность написания e-mail-а и пароля');
+                    result_text(3, 'LOGIN_DATA_INCORRECT');
                 }
             } else {
                 if ($query_check_token && ($query_check_token->RecordCount() > 0)) {
                     if ($query_check_token->Fields('regToken') != null) {
-                        result_text(1, 'Аккаунт не подтвержден при регистрации');
+                        result_text(1, 'ACCOUNT_NOT_CONFIRMED');
                     } else {
                         // Создание токена авторизированного пользователя
                         $authToken = array(
@@ -249,15 +248,15 @@ function Auth()
                                     $sql_add_date_login = $db->Execute('update `user` set last_login_date=' . intval(gmmktime()) . ' where email=' . QPrepStr($user_login));
                                     $sql_add_login_attempt = $db->Execute('update `user` set login_attempts=0 where email=' . QPrepStr($user_login));
                                 } else {
-                                    result_text(1, 'Ошибка сервера');
+                                    result_text(1, 'INTERNAL_ERROR');
                                 }
                             }
                         } else {
-                            result_text(1, 'Ошибка сервера');
+                            result_text(1, 'INTERNAL_ERROR');
                         }
                     }
                 } else {
-                    result_text(1, 'Ошибка сервера');
+                    result_text(1, 'INTERNAL_ERROR');
                 }
             }
         } else {
@@ -307,22 +306,22 @@ function Auth()
                             </div>';
                         if (Mailto(PrepStr($user_login), $subject, $content)) {
                             // Отправляем результат на фронтенд
-                            result_text(2, 'На ваш e-mail (' . $user_login . ') отправлено письмо с подтверждением регистрации');
+                            result_text(2, 'ON_EMAIL_SENDED_CONFIRM');
                         } else {
-                            result_text(1, 'Ошибка сервера');
+                            result_text(1, 'INTERNAL_ERROR');
                         }
                     } else {
-                        result_text(1, 'Ошибка сервера');
+                        result_text(1, 'INTERNAL_ERROR');
                     }
                 } else {
-                    result_text(1, 'Ошибка сервера');
+                    result_text(1, 'INTERNAL_ERROR');
                 }
             } else {
-                result_text(1, 'Ошибка сервера');
+                result_text(1, 'INTERNAL_ERROR');
             }
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
@@ -362,18 +361,18 @@ function RefreshPasswordRequest()
                             </div>
                             </div>';
                     if (Mailto($user_email, $subject, $content)) {
-                        result_text(2, 'На ваш e-mail (' . $user_email . ') отправлено письмо с информацией о сбросе пароля');
+                        result_text(2, 'ON_EMAIL_SENDED_PASS_RESET');
                     } else {
-                        result_text(1, 'Ошибка сервера');
+                        result_text(1, 'INTERNAL_ERROR');
                     }
                 } else {
-                    result_text(1, 'Ошибка сервера');
+                    result_text(1, 'INTERNAL_ERROR');
                 }
             } else {
-                result_text(1, 'Ошибка сервера');
+                result_text(1, 'INTERNAL_ERROR');
             }
         } else {
-            result_text(1, 'Введенный e-mail не зарегистрирован на сайте');
+            result_text(1, 'CURRENT_EMAIL_NOT_REGISTERED');
         }
     }
 }
@@ -400,7 +399,7 @@ function RefreshPassword()
         if ($query && ($query->RecordCount() > 0)) {
             if ($current_password != $query->Fields('password')) {
                 // Ошибка ввода пароля
-                result_text(3, 'Проверьте правильность написания пароля');
+                result_text(3, 'CHECK_PASSWORD');
             } else {
                 // Успешная смена пароля
                 $sql_delete_passToken = 'update `user_tokens` set passToken=null where passToken=' . QPrepStr($token);
@@ -409,21 +408,19 @@ function RefreshPassword()
                     $sql_update_password = 'update `user` set password=' . QPrepStr($new_password) . ' where id=' . intval($sql_get_user_id->Fields('user_id'));
                     $query = $db->Execute($sql_update_password);
                     if ($query) {
-                        result_text(0, "Сброс пароля прошел успешно!"
-                            . " "
-                            . "Для продолжения пожалуйста авторизуйтесь с новым паролем");
+                        result_text(0, "RESET_PASSWORD_SUCCESS");
                     } else {
-                        result_text(1, 'Ошибка сервера');
+                        result_text(1, 'INTERNAL_ERROR');
                     }
                 } else {
-                    result_text(1, 'Ошибка сервера');
+                    result_text(1, 'INTERNAL_ERROR');
                 }
             }
         } else {
-            result_text(2, 'Смена пароля была совершена ранее');
+            result_text(2, 'PASSWORD_ALREADY_RESET');
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
@@ -449,20 +446,18 @@ function Conf_register()
         if ($query && ($query->RecordCount() > 0)) {
             if ($user_password != $query->Fields('password')) {
                 // Ошибка ввода пароля
-                result_text(3, 'Проверьте правильность написания пароля');
+                result_text(3, 'CHECK_PASSWORD');
             } else {
                 // Успешная регистрация
                 $sql_delete_regToken = 'update `user_tokens` set regToken=null where regToken=' . QPrepStr($regToken);
                 $query = $db->Execute($sql_delete_regToken);
-                result_text(0, "Добро пожаловать на сайт 'Dereban.ua', подтверждение регистрации прошло успешно!"
-                    . " "
-                    . "Для продолжения пожалуйста авторизуйтесь");
+                result_text(0, "YEPI_REGISTERED_SUCCESS");
             }
         } else {
-            result_text(1, 'Аккаунт уже был ранее подтвержден');
+            result_text(1, 'ACCOUNT_ALREADY_CONFIRMED');
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
@@ -506,10 +501,10 @@ function GetUserData()
                 'area' => $sql_get_user_data->Fields('area')
             ]);
         } else {
-            result_text(1, 'Ошибка сервера');
+            result_text(1, 'INTERNAL_ERROR');
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
@@ -522,18 +517,20 @@ function GetTitleForUserAdsComp()
         $id = $_GET['id'];
 
         if (SqlGetUserId() === $id) {
-            result_text(0, 'Мои объявления');
+            // TODO: TRANSLATE TITLES
+            result_text(0, 'MY_SHOWCASES');
         } else {
             $sql_get_user_name_surname = $db->Execute('select name, surname from `user_contacts` where user_id=' . $id);
 
             if ($sql_get_user_name_surname && ($sql_get_user_name_surname->RecordCount() > 0)) {
+                // TODO: TRANSLATE TITLES WITH DATA
                 result_text(0, 'Объявления пользователя - ' . $sql_get_user_name_surname->Fields('name') . ' ' . $sql_get_user_name_surname->Fields('surname'));
             } else {
-                result_text(1, 'Ошибка сервера');
+                result_text(1, 'INTERNAL_ERROR');
             }
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
@@ -564,19 +561,19 @@ function GetUserRating()
                     if ($sql_get_users_rating) {
                         result_text(0, $sql_get_users_rating->Fields('sum'));
                     } else {
-                        result_text(1, 'Ошибка сервера');
+                        result_text(1, 'INTERNAL_ERROR');
                     }
                 } else {
                     result_text(0, 0);
                 }
             } else {
-                result_text(1, 'Ошибка сервера');
+                result_text(1, 'INTERNAL_ERROR');
             }
         } else {
-            result_text(1, 'Ошибка сервера');
+            result_text(1, 'INTERNAL_ERROR');
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
@@ -590,7 +587,7 @@ function AddUserInfo()
     if (SqlGetUserId()) {
         if (isset($data['user']) && ($user = $data['user']) && isset($data['contacts']) && ($contacts = $data['contacts']) && isset($data['social']) && ($social = $data['social'])) {
 
-            if (empty($contacts['phone2']) || isset($contacts['phone2']) || $contacts['phone2'] === '' || $contacts['phone2'] === null) {
+            if (empty($contacts['phone2']) || $contacts['phone2'] === '' || $contacts['phone2'] === null) {
                 $phone2 = 'null';
             } else {
                 $phone2 = intval($contacts['phone2']);
@@ -612,15 +609,15 @@ function AddUserInfo()
                 . 'where user_id=' . SqlGetUserId());
 
             if ($sql_add_user_info) {
-                result_text(0, 'Изменения сохранены');
+                result_text(0, 'DATA_SAVED');
             } else {
-                result_text(1, 'Ошибка сервера');
+                result_text(1, 'INTERNAL_ERROR');
             }
         } else {
-            result_text(1, 'Ошибка сервера');
+            result_text(1, 'INTERNAL_ERROR');
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
@@ -656,10 +653,10 @@ function GetUserInfo()
                 $sql_select_user_info->Fields('instagram')
             );
         } else {
-            result_text(1, 'Ошибка сервера');
+            result_text(1, 'INTERNAL_ERROR');
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
@@ -672,10 +669,10 @@ function SetUserPhoto()
         if (SqlGetUserId()) {
             include_once './user_photo.php';
         } else {
-            result_text(1, 'Ошибка сервера');
+            result_text(1, 'INTERNAL_ERROR');
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
@@ -688,12 +685,12 @@ function RemoveAuthToken()
         $sql_remove_token = $db->Execute('update `user_tokens` set authToken="" where authToken=' . QPrepStr($authToken));
 
         if ($sql_remove_token) {
-            result_text(0, 'Токен удален успешно');
+            result_text(0, 'JWT_DELETED');
         } else {
-            result_text(1, 'Ошибка сервера');
+            result_text(1, 'INTERNAL_ERROR');
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
@@ -705,7 +702,7 @@ function SaveShowcasePhoto()
         if (SqlGetUserId()) {
             include_once './showcase_photo.php';
         } else {
-            result_text(1, 'Ошибка сервера');
+            result_text(1, 'INTERNAL_ERROR');
         }
     } else {
         result_text(0, '');
@@ -757,34 +754,35 @@ function SaveShowcase()
                             . 'additionalPhotos=' . QPrepStr($additionalPhotos['addPhotosLink'])
                             . ' where id=' . $_GET['id']);
                         if ($sql_update_showcase) {
-                            result_text(0, 'Изменения сохранены');
+                            result_text(0, 'DATA_SAVED');
                         } else {
-                            result_text(1, 'Ошибка сервера');
+                            result_text(1, 'INTERNAL_ERROR');
                         }
                     } else {
-                        result_text(1, 'Ошибка сервера');
+                        result_text(1, 'INTERNAL_ERROR');
                     }
                 } else {
-                    $sql_add_showcase = $db->Execute('insert into `user_showcase` (user_id, adding_time, photo_url, case_name, price, type, full_type, detail_type, state, wheel_size, velo_type, direction, description, additionalPhotos) values ('
+                    $sql_add_showcase = $db->Execute('insert into `user_showcase` (user_id, adding_time, update_time, photo_url, case_name, price, type, full_type, detail_type, state, wheel_size, velo_type, direction, description, additionalPhotos) values ('
                         . SqlGetUserId() . ','
+                        . gmmktime() . ','
                         . gmmktime() . ','
                         . QPrepStr($filePath) . ','
                         . implode(',', $upd)
                         . ')');
                     if ($sql_add_showcase) {
-                        result_text(0, 'Объявление добавлено');
+                        result_text(0, 'SHOWCASE_ADDED');
                     } else {
-                        result_text(1, 'Ошибка сервера');
+                        result_text(1, 'INTERNAL_ERROR');
                     }
                 }
             } else {
-                result_text(1, 'Ошибка сервера');
+                result_text(1, 'INTERNAL_ERROR');
             }
         } else {
-            result_text(1, 'Ошибка сервера');
+            result_text(1, 'INTERNAL_ERROR');
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
@@ -799,18 +797,17 @@ function GetShowCases()
         $condition = 'where us.id=' . intval($_GET['id']);
     } else if (isset($_GET['user_id']) && $_GET['user_id'] != '') {
         $condition = 'where us.user_id=' . intval($_GET['user_id']) . ' order by adding_time desc';
-    } else if (isset($_GET['authToken']) && $_GET['authToken'] != '') {
+    } else if (isset($_GET['favorites']) && $_GET['favorites']) {
         $sql_get_favorite_case_id = $db->Execute('select case_id from `case_favorite` where user_id=' . SqlGetUserId());
         $case_ids = [];
-        if ($sql_get_favorite_case_id->Fields('case_id')) {
+        if ($sql_get_favorite_case_id) {
             while (!$sql_get_favorite_case_id->EOF) {
                 $case_ids[] = $sql_get_favorite_case_id->Fields('case_id');
                 $sql_get_favorite_case_id->MoveNext();
             }
             $condition = 'where us.id in (' . implode(',', $case_ids) . ') order by adding_time desc';
         } else {
-            result_text(1, 'Не найдено избранных объявлений');
-            return;
+            result_text(1, []);
         }
     } else {
         $condition = 'order by adding_time desc';
@@ -909,16 +906,16 @@ function GetShowCases()
 
         result_text(0, $show_case_result);
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'DB_ERROR');
     }
 }
 
 function FormatDate($date)
 {
     if ($date >= strtotime("today")) {
-        return "Сегодня в " . strftime("%H:%M", $date);
+        return (object) array('alias' => 'MAIN.TODAY', 'time' => strftime("%H:%M", $date));
     } else if ($date >= strtotime("yesterday")) {
-        return "Вчера в " . strftime("%H:%M", $date);
+        return (object) array('alias' => 'MAIN.YESTERDAY', 'time' => strftime("%H:%M", $date));
     } else {
         return strftime("%d.%m", $date);
     }
@@ -949,7 +946,7 @@ function ShowCaseChangeRating()
                 if ($sql_add_new_rating) {
                     result_text(2, $type);
                 } else {
-                    result_text(1, 'Ошибка сервера');
+                    result_text(1, 'INTERNAL_ERROR');
                 }
             } else {
                 $sql_get_user_type = $db->Execute('select rating_value from `case_rating` where case_id=' . $case_id . ' and user_id=' . $cur_user_id);
@@ -959,17 +956,17 @@ function ShowCaseChangeRating()
                     if ($sql_set_user_type) {
                         result_text(2, $type);
                     } else {
-                        result_text(1, 'Ошибка сервера');
+                        result_text(1, 'INTERNAL_ERROR');
                     }
                 } else {
-                    result_text(1, 'Повторное голосование');
+                    result_text(1, 'REPEATING_CHANGE_RATING');
                 }
             }
         } else {
-            result_text(0, 'Нельзя голосовать за свои объявления');
+            result_text(0, 'NO_ALLOW_TO_CHANGE_RATING');
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
@@ -983,10 +980,10 @@ function ShowCaseGetRating()
         if ($sql_get_case_rating) {
             result_text(0, $sql_get_case_rating->Fields('sum'));
         } else {
-            result_text(1, 'Ошибка сервера');
+            result_text(1, 'INTERNAL_ERROR');
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
@@ -1008,10 +1005,10 @@ function GetActiveRating()
             }
             result_text(0, $case_id_arr);
         } else {
-            result_text(1, 'Не выбранно ни одного активного объявления');
+            result_text(1, 'NO_FAVORITE_SHOWCASES');
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
@@ -1027,20 +1024,20 @@ function ShowCaseToggleFavorite()
         if ($sql_get_case_favorite_status->Fields('case_id') != null) {
             $sql_delete_favorite_from_case = $db->Execute('delete from `case_favorite` where case_id=' . $case_id . ' and user_id=' . SqlGetUserId());
             if ($sql_delete_favorite_from_case) {
-                result_text(0, 'Объявление удалено из избранных');
+                result_text(0, 'SHOWCASE_REMOVED_FROM_FAVORITES');
             } else {
-                result_text(1, 'Ошибка сервера');
+                result_text(1, 'INTERNAL_ERROR');
             }
         } else {
             $sql_set_favorite_to_case = $db->Execute('insert into `case_favorite` (case_id, user_id) values (' . $case_id . ',' . SqlGetUserId() . ')');
             if ($sql_set_favorite_to_case) {
-                result_text(0, 'Объявление добавлено в избранные');
+                result_text(0, 'SHOWCASE_ADDED_TO_FAVORITES');
             } else {
-                result_text(1, 'Ошибка сервера');
+                result_text(1, 'INTERNAL_ERROR');
             }
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
@@ -1058,10 +1055,10 @@ function GetActiveFavorite()
             }
             result_text(0, $case_id_arr);
         } else {
-            result_text(1, 'Не выбранно ни одного избранного объявления');
+            result_text(1, 'NO_FAVORITE_SHOWCASES');
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
@@ -1112,13 +1109,13 @@ function GetCase()
                 ];
                 result_text(0, $show_case_result);
             } else {
-                result_text(1, 'Ошибка сервера');
+                result_text(1, 'INTERNAL_ERROR');
             }
         } else {
-            result_text(1, 'Ошибка сервера');
+            result_text(1, 'INTERNAL_ERROR');
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
@@ -1135,25 +1132,25 @@ function ShowCaseToggleActive()
             if ($sql_get_case_active_status->Fields('active') == 1) {
                 $sql_toggle_case_active_status = $db->Execute('update `user_showcase` set active=0 where id=' . $case_id . ' and user_id=' . SqlGetUserId());
                 if ($sql_toggle_case_active_status) {
-                    result_text(0, 'Объявление деактивировано');
+                    result_text(0, 'SHOWCASE_DEACTIVATED');
                 } else {
-                    result_text(2, 'Ошибка сервера');
+                    result_text(2, 'INTERNAL_ERROR');
                 }
             } else if ($sql_get_case_active_status->Fields('active') == 0) {
                 $sql_toggle_case_active_status = $db->Execute('update `user_showcase` set active=1 where id=' . $case_id . ' and user_id=' . SqlGetUserId());
                 if ($sql_toggle_case_active_status) {
-                    result_text(1, 'Объявление активировано');
+                    result_text(1, 'SHOWCASE_ACTIVATED');
                 } else {
-                    result_text(2, 'Ошибка сервера');
+                    result_text(2, 'INTERNAL_ERROR');
                 }
             } else {
-                result_text(2, 'Ошибка сервера');
+                result_text(2, 'INTERNAL_ERROR');
             }
         } else {
-            result_text(2, 'Ошибка сервера');
+            result_text(2, 'INTERNAL_ERROR');
         }
     } else {
-        result_text(2, 'Ошибка сервера');
+        result_text(2, 'INTERNAL_ERROR');
     }
 }
 
@@ -1165,11 +1162,11 @@ function DeleteShowCase()
         $case_id = $_GET['case_id'];
         $sql_delete_show_case = $db->Execute('delete from `user_showcase` where id=' . $case_id . ' and user_id=' . SqlGetUserId());
         if ($sql_delete_show_case) {
-            result_text(0, 'Объявление удалено успешно');
+            result_text(0, 'SHOWCASE_DELETED');
         } else {
-            result_text(1, 'Ошибка сервера');
+            result_text(1, 'INTERNAL_ERROR');
         }
     } else {
-        result_text(1, 'Ошибка сервера');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
