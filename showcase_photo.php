@@ -10,7 +10,7 @@ $photo = $_FILES['photo']['tmp_name'];
 if (is_uploaded_file($photo)) {
     if (!file_exists($destination)) {
         mkdir($destination);
-        $destination .= '/' . $file_path;
+        $destination .= $file_path;
         if (!file_exists($destination)) {
             mkdir($destination);
         }
