@@ -878,22 +878,22 @@ function GetShowCases()
         $show_case_result = [];
             while (!$sql_get_show_cases->EOF) {
 
-                $sql_get_user_showcase_id = $db->Execute('select id from `user_showcase` where user_id=' . $sql_get_show_cases->Fields('user_id'));
-                $showcase_ids = [];
-                while (!$sql_get_user_showcase_id->EOF) {
-                    $showcase_ids[] = $sql_get_user_showcase_id->Fields('id');
-                    $sql_get_user_showcase_id->MoveNext();
-                }
-                $sql_get_user_rating = $db->Execute('select sum(rating_value) as `sum` from `case_rating` where case_id in (' . implode(',', $showcase_ids) . ')');
-                $user_rating = $sql_get_user_rating->Fields('sum');
+                // $sql_get_user_showcase_id = $db->Execute('select id from `user_showcase` where user_id=' . $sql_get_show_cases->Fields('user_id'));
+                // $showcase_ids = [];
+                // while (!$sql_get_user_showcase_id->EOF) {
+                //     $showcase_ids[] = $sql_get_user_showcase_id->Fields('id');
+                //     $sql_get_user_showcase_id->MoveNext();
+                // }
+                // $sql_get_user_rating = $db->Execute('select sum(rating_value) as `sum` from `case_rating` where case_id in (' . implode(',', $showcase_ids) . ')');
+                // $user_rating = $sql_get_user_rating->Fields('sum');
 
-                if (isset($_GET['id']) && $_GET['id'] != '') {
-                    $case_id = intval($_GET['id']);
-                } else {
-                    $case_id = $sql_get_show_cases->Fields('id');
-                }
+                // if (isset($_GET['id']) && $_GET['id'] != '') {
+                //     $case_id = intval($_GET['id']);
+                // } else {
+                //     $case_id = $sql_get_show_cases->Fields('id');
+                // }
 
-                $sql_get_show_case_rating = $db->Execute('select sum(rating_value) as `sum` from `case_rating` where case_id=' . $case_id);
+                // $sql_get_show_case_rating = $db->Execute('select sum(rating_value) as `sum` from `case_rating` where case_id=' . $case_id);
 
                 $show_case_result[] = [
                     'id' => $sql_get_show_cases->Fields('id'),
@@ -903,7 +903,7 @@ function GetShowCases()
                     'update_time' => FormatDate($sql_get_show_cases->Fields('update_time')),
                     'update_time_raw' => $sql_get_show_cases->Fields('update_time'),
                     'case_name' => $sql_get_show_cases->Fields('case_name'),
-                    'photo_url' => ADS_IMAGES_PATH . $sql_get_show_cases->Fields('photo_url'),
+                    'photo_url' => $sql_get_show_cases->Fields('photo_url'),
                     'price' => $sql_get_show_cases->Fields('price'),
                     'old_price' => $sql_get_show_cases->Fields('old_price'),
                     'type' => $sql_get_show_cases->Fields('type'),
@@ -916,8 +916,8 @@ function GetShowCases()
                     'description' => $sql_get_show_cases->Fields('description'),
                     'additionalPhotos' => $sql_get_show_cases->Fields('additionalPhotos'),
                     'active' => $sql_get_show_cases->Fields('active'),
-                    'case_rating' => $sql_get_show_case_rating->Fields('sum'),
-                    'user_rating' => $user_rating,
+                    // 'case_rating' => $sql_get_show_case_rating->Fields('sum'),
+                    // 'user_rating' => $user_rating,
                     'user_photo' => $sql_get_show_cases->Fields('photo'),
                     'user_name' => $sql_get_show_cases->Fields('name'),
                     'user_surname' => $sql_get_show_cases->Fields('surname'),
@@ -931,6 +931,7 @@ function GetShowCases()
                 ];
                 $sql_get_show_cases->MoveNext();
             }
+
         result_text(0, $show_case_result);
     } else {
         result_text(1, 'INTERNAL_ERROR');
