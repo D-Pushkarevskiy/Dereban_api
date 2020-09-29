@@ -873,6 +873,7 @@ function GetShowCases()
         . 'inner join `user_contacts` uc '
         . 'on us.user_id=uc.user_id '
         . 'order by adding_time desc');
+        result_text(0, $sql_get_show_cases);
 
     if ($sql_get_show_cases) {
         $show_case_result = [];
