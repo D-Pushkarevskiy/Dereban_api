@@ -819,26 +819,26 @@ function GetShowCases()
     $case_id = '';
     $condition = '';
 
-    if (isset($_GET['id']) && $_GET['id'] != '') {
-        $condition = 'where us.id=' . intval($_GET['id']);
-    } else if (isset($_GET['user_id']) && $_GET['user_id'] != '') {
-        $condition = 'where us.user_id=' . intval($_GET['user_id']) . ' order by adding_time desc';
-    } else if (isset($_GET['favorites']) && $_GET['favorites']) {
-        $sql_get_favorite_case_id = $db->Execute('select case_id from `case_favorite` where user_id=' . SqlGetUserId());
-        $case_ids = [];
-        if ($sql_get_favorite_case_id) {
-            while (!$sql_get_favorite_case_id->EOF) {
-                $case_ids[] = $sql_get_favorite_case_id->Fields('case_id');
-                $sql_get_favorite_case_id->MoveNext();
-            }
-            $condition = 'where us.id in (' . implode(',', $case_ids) . ') order by adding_time desc';
-        } else {
-            result_text(1, []);
-            return;
-        }
-    } else {
-        $condition = 'order by adding_time desc';
-    }
+    // if (isset($_GET['id']) && $_GET['id'] != '') {
+    //     $condition = 'where us.id=' . intval($_GET['id']);
+    // } else if (isset($_GET['user_id']) && $_GET['user_id'] != '') {
+    //     $condition = 'where us.user_id=' . intval($_GET['user_id']) . ' order by adding_time desc';
+    // } else if (isset($_GET['favorites']) && $_GET['favorites']) {
+    //     $sql_get_favorite_case_id = $db->Execute('select case_id from `case_favorite` where user_id=' . SqlGetUserId());
+    //     $case_ids = [];
+    //     if ($sql_get_favorite_case_id) {
+    //         while (!$sql_get_favorite_case_id->EOF) {
+    //             $case_ids[] = $sql_get_favorite_case_id->Fields('case_id');
+    //             $sql_get_favorite_case_id->MoveNext();
+    //         }
+    //         $condition = 'where us.id in (' . implode(',', $case_ids) . ') order by adding_time desc';
+    //     } else {
+    //         result_text(1, []);
+    //         return;
+    //     }
+    // } else {
+    //     $condition = 'order by adding_time desc';
+    // }
 
     $sql_get_show_cases = $db->Execute('select '
         . 'us.id, '
@@ -872,7 +872,7 @@ function GetShowCases()
         . 'from `user_showcase` us '
         . 'inner join `user_contacts` uc '
         . 'on us.user_id=uc.user_id '
-        . $condition);
+        . 'order by adding_time desc');
 
     if ($sql_get_show_cases) {
         $show_case_result = [];
