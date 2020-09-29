@@ -891,10 +891,10 @@ function GetShowCases()
                 } else {
                     $case_id = $sql_get_show_cases->Fields('id');
                 }
-                result_text(0, $user_rating);
 
                 $sql_get_show_case_rating = $db->Execute('select sum(rating_value) as `sum` from `case_rating` where case_id=' . $case_id);
 
+                result_text(0, $sql_get_show_case_rating);
                 $show_case_result[] = [
                     'id' => $sql_get_show_cases->Fields('id'),
                     'user_id' => $sql_get_show_cases->Fields('user_id'),
