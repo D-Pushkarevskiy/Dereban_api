@@ -834,6 +834,7 @@ function GetShowCases()
             $condition = 'where us.id in (' . implode(',', $case_ids) . ') order by adding_time desc';
         } else {
             result_text(1, []);
+            return;
         }
     } else {
         $condition = 'order by adding_time desc';
@@ -935,7 +936,7 @@ function GetShowCases()
 
         result_text(0, $show_case_result);
     } else {
-        result_text(1, 'DB_ERROR');
+        result_text(1, 'INTERNAL_ERROR');
     }
 }
 
