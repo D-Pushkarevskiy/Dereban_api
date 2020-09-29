@@ -819,28 +819,82 @@ function GetShowCases()
     $case_id = '';
     $condition = '';
 
-    $sql_get_show_cases = $db->Execute('select * from `user_showcase` us inner join `user_contacts` uc on us.user_id=uc.user_id order by adding_time desc');
+    if (isset($_GET['id']) && $_GET['id'] != '') {
+        $condition = 'where us.id=' . intval($_GET['id']);
+    } else if (isset($_GET['user_id']) && $_GET['user_id'] != '') {
+        $condition = 'where us.user_id=' . intval($_GET['user_id']) . ' order by adding_time desc';
+    } else if (isset($_GET['favorites']) && $_GET['favorites']) {
+        $sql_get_favorite_case_id = $db->Execute('select case_id from `case_favorite` where user_id=' . SqlGetUserId());
+        $case_ids = [];
+        if ($sql_get_favorite_case_id) {
+            while (!$sql_get_favorite_case_id->EOF) {
+                $case_ids[] = $sql_get_favorite_case_id->Fields('case_id');
+                $sql_get_favorite_case_id->MoveNext();
+            }
+            $condition = 'where us.id in (' . implode(',', $case_ids) . ') order by adding_time desc';
+        } else {
+            result_text(1, []);
+            return;
+        }
+    } else {
+        $condition = 'order by adding_time desc';
+    }
 
-    if ($sql_get_show_cases) {
+    $sql_get_show_cases = $db->Execute('select '
+        . 'us.id, '
+        . 'us.user_id, '
+        . 'us.adding_time, '
+        . 'us.update_time, '
+        . 'us.case_name, '
+        . 'us.photo_url, '
+        . 'us.price, '
+        . 'us.old_price, '
+        . 'us.type, '
+        . 'us.full_type, '
+        . 'us.detail_type, '
+        . 'us.state, '
+        . 'us.wheel_size, '
+        . 'us.velo_type, '
+        . 'us.direction, '
+        . 'us.description, '
+        . 'us.additionalPhotos, '
+        . 'us.active, '
+        . 'uc.name, '
+        . 'uc.photo, '
+        . 'uc.surname, '
+        . 'uc.area, '
+        . 'uc.telegram, '
+        . 'uc.phone, '
+        . 'uc.phone2, '
+        . 'uc.vk, '
+        . 'uc.facebook, '
+        . 'uc.instagram '
+        . 'from `user_showcase` us '
+        . 'inner join `user_contacts` uc '
+        . 'on us.user_id=uc.user_id '
+        . $condition);
+
+    if ($sql_get_show_cases && ($sql_get_show_cases->RecordCount() > 0)) {
         $show_case_result = [];
+        if ($sql_get_show_cases->Fields('case_name') != null) {
             while (!$sql_get_show_cases->EOF) {
 
-                // $sql_get_user_showcase_id = $db->Execute('select id from `user_showcase` where user_id=' . $sql_get_show_cases->Fields('user_id'));
-                // $showcase_ids = [];
-                // while (!$sql_get_user_showcase_id->EOF) {
-                //     $showcase_ids[] = $sql_get_user_showcase_id->Fields('id');
-                //     $sql_get_user_showcase_id->MoveNext();
-                // }
-                // $sql_get_user_rating = $db->Execute('select sum(rating_value) as `sum` from `case_rating` where case_id in (' . implode(',', $showcase_ids) . ')');
-                // $user_rating = $sql_get_user_rating->Fields('sum');
+                $sql_get_user_showcase_id = $db->Execute('select id from `user_showcase` where user_id=' . $sql_get_show_cases->Fields('user_id'));
+                $showcase_ids = [];
+                while (!$sql_get_user_showcase_id->EOF) {
+                    $showcase_ids[] = $sql_get_user_showcase_id->Fields('id');
+                    $sql_get_user_showcase_id->MoveNext();
+                }
+                $sql_get_user_rating = $db->Execute('select sum(rating_value) as `sum` from `case_rating` where case_id in (' . implode(',', $showcase_ids) . ')');
+                $user_rating = $sql_get_user_rating->Fields('sum');
 
-                // if (isset($_GET['id']) && $_GET['id'] != '') {
-                //     $case_id = intval($_GET['id']);
-                // } else {
-                //     $case_id = $sql_get_show_cases->Fields('id');
-                // }
+                if (isset($_GET['id']) && $_GET['id'] != '') {
+                    $case_id = intval($_GET['id']);
+                } else {
+                    $case_id = $sql_get_show_cases->Fields('id');
+                }
 
-                // $sql_get_show_case_rating = $db->Execute('select sum(rating_value) as `sum` from `case_rating` where case_id=' . $case_id);
+                $sql_get_show_case_rating = $db->Execute('select sum(rating_value) as `sum` from `case_rating` where case_id=' . $case_id);
 
                 $show_case_result[] = [
                     'id' => $sql_get_show_cases->Fields('id'),
@@ -850,7 +904,7 @@ function GetShowCases()
                     'update_time' => FormatDate($sql_get_show_cases->Fields('update_time')),
                     'update_time_raw' => $sql_get_show_cases->Fields('update_time'),
                     'case_name' => $sql_get_show_cases->Fields('case_name'),
-                    'photo_url' => $sql_get_show_cases->Fields('photo_url'),
+                    'photo_url' => ADS_IMAGES_PATH . $sql_get_show_cases->Fields('photo_url'),
                     'price' => $sql_get_show_cases->Fields('price'),
                     'old_price' => $sql_get_show_cases->Fields('old_price'),
                     'type' => $sql_get_show_cases->Fields('type'),
@@ -863,8 +917,8 @@ function GetShowCases()
                     'description' => $sql_get_show_cases->Fields('description'),
                     'additionalPhotos' => $sql_get_show_cases->Fields('additionalPhotos'),
                     'active' => $sql_get_show_cases->Fields('active'),
-                    // 'case_rating' => $sql_get_show_case_rating->Fields('sum'),
-                    // 'user_rating' => $user_rating,
+                    'case_rating' => $sql_get_show_case_rating->Fields('sum'),
+                    'user_rating' => $user_rating,
                     'user_photo' => $sql_get_show_cases->Fields('photo'),
                     'user_name' => $sql_get_show_cases->Fields('name'),
                     'user_surname' => $sql_get_show_cases->Fields('surname'),
@@ -878,6 +932,7 @@ function GetShowCases()
                 ];
                 $sql_get_show_cases->MoveNext();
             }
+        }
 
         result_text(0, $show_case_result);
     } else {
