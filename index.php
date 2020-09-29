@@ -838,6 +838,7 @@ function GetShowCases()
     } else {
         $condition = 'order by adding_time desc';
     }
+    result_text(0, $condition);
 
     $sql_get_show_cases = $db->Execute('select '
         . 'us.id, '
