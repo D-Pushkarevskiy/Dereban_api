@@ -819,7 +819,7 @@ function GetShowCases()
     $case_id = '';
     $condition = '';
 
-    $sql_get_show_cases = $db->Execute('select us.id, us.user_id, us.adding_time, us.update_time, us.case_name, us.photo_url, us.price, us.old_price, us.type, us.full_type, us.detail_type, us.state, us.wheel_size, us.velo_type, us.direction, us.description, us.additionalPhotos, us.active, uc.name, uc.photo, uc.surname, uc.area, uc.telegram, uc.phone, uc.phone2, uc.vk, uc.facebook, uc.instagram from `user_showcase` us inner join `user_contacts` uc on us.user_id=uc.user_id order by adding_time desc');
+    $sql_get_show_cases = $db->Execute('select * from `user_showcase` us inner join `user_contacts` uc on us.user_id=uc.user_id order by adding_time desc');
     
     result_text(1, $sql_get_show_cases);
         return;
