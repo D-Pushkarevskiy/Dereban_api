@@ -838,7 +838,6 @@ function GetShowCases()
     } else {
         $condition = 'order by adding_time desc';
     }
-    result_text(0, $condition);
 
     $sql_get_show_cases = $db->Execute('select '
         . 'us.id, '
@@ -872,6 +871,8 @@ function GetShowCases()
         . 'inner join `user_contacts` uc '
         . 'on us.user_id=uc.user_id '
         . $condition);
+
+        result_text(0, $sql_get_show_cases);
 
     if ($sql_get_show_cases && ($sql_get_show_cases->RecordCount() > 0)) {
         $show_case_result = [];
