@@ -820,9 +820,6 @@ function GetShowCases()
     $condition = '';
 
     $sql_get_show_cases = $db->Execute('select * from `user_showcase` us inner join `user_contacts` uc on us.user_id=uc.user_id order by adding_time desc');
-    
-    result_text(1, $sql_get_show_cases);
-        return;
 
     if ($sql_get_show_cases) {
         $show_case_result = [];
