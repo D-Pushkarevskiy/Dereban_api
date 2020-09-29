@@ -874,9 +874,8 @@ function GetShowCases()
         . 'on us.user_id=uc.user_id '
         . $condition);
 
-    if ($sql_get_show_cases && ($sql_get_show_cases->RecordCount() > 0)) {
+    if ($sql_get_show_cases) {
         $show_case_result = [];
-        if ($sql_get_show_cases->Fields('case_name') != null) {
             while (!$sql_get_show_cases->EOF) {
 
                 $sql_get_user_showcase_id = $db->Execute('select id from `user_showcase` where user_id=' . $sql_get_show_cases->Fields('user_id'));
@@ -932,8 +931,6 @@ function GetShowCases()
                 ];
                 $sql_get_show_cases->MoveNext();
             }
-        }
-
         result_text(0, $show_case_result);
     } else {
         result_text(1, 'INTERNAL_ERROR');
