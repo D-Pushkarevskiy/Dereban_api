@@ -5,9 +5,9 @@
 define('ALLOW_FRONT_URL', 'http://localhost:4200');
 
 define('dbshost', 'localhost');
-define('dbsuname', 'dereban');
-define('dbspass', 'qwertyloh911');
-define('dbsname', 'dereban_bd');
+define('dbsuname', 'rhsaybrndt');
+define('dbspass', 'xwAqqJN3TG');
+define('dbsname', 'rhsaybrndt');
 define('dbsdriver', 'mysqli');
 
 ?>
