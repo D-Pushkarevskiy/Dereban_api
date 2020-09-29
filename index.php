@@ -97,6 +97,9 @@ if (isset($_GET['func'])) {
         case 'get_user_info':
             GetUserInfo();
             break;
+        case 'get_showcase_options':
+            GetShowcaseOptions();
+            break;
         case 'set_user_photo':
             SetUserPhoto();
             break;
@@ -493,12 +496,17 @@ function GetUserData()
             . 'inner join `user_tokens` ut on uc.user_id=ut.user_id '
             . 'where ut.authToken=' . QPrepStr($authToken));
 
-        if ($sql_get_user_data && ($sql_get_user_data->RecordCount() > 0)) {
+            $sql_get_showcases_limit = $db->Execute('select case_limit from `user` where id=' . SqlGetUserId());
+            $sql_get_showcases_count = $db->Execute('select count(*) from `user_showcase` where user_id=' . SqlGetUserId());
+
+        if ($sql_get_user_data && ($sql_get_user_data->RecordCount() > 0) && $sql_get_showcases_count && ($sql_get_showcases_count->RecordCount() > 0) && $sql_get_showcases_limit && $sql_get_showcases_limit->RecordCount() > 0) {
             result_text(0, [
                 'id' => $sql_get_user_data->Fields('user_id'),
                 'name' => $sql_get_user_data->Fields('name'),
                 'photo' => $sql_get_user_data->Fields('photo'),
-                'area' => $sql_get_user_data->Fields('area')
+                'area' => $sql_get_user_data->Fields('area'),
+                'limit' => $sql_get_showcases_limit->Fields('case_limit'),
+                'showcase_count' => $sql_get_showcases_count->Fields('count(*)')
             ]);
         } else {
             result_text(1, 'INTERNAL_ERROR');
@@ -517,14 +525,12 @@ function GetTitleForUserAdsComp()
         $id = $_GET['id'];
 
         if (SqlGetUserId() === $id) {
-            // TODO: TRANSLATE TITLES
-            result_text(0, 'MY_SHOWCASES');
+            result_text(2, 'MAIN.MY_SHOWCASES');
         } else {
             $sql_get_user_name_surname = $db->Execute('select name, surname from `user_contacts` where user_id=' . $id);
 
             if ($sql_get_user_name_surname && ($sql_get_user_name_surname->RecordCount() > 0)) {
-                // TODO: TRANSLATE TITLES WITH DATA
-                result_text(0, 'Объявления пользователя - ' . $sql_get_user_name_surname->Fields('name') . ' ' . $sql_get_user_name_surname->Fields('surname'));
+                result_text(0, ['MAIN.USERS_SHOWCASES', ' - ' . $sql_get_user_name_surname->Fields('name') . ' ' . $sql_get_user_name_surname->Fields('surname')]);
             } else {
                 result_text(1, 'INTERNAL_ERROR');
             }
@@ -655,6 +661,27 @@ function GetUserInfo()
         } else {
             result_text(1, 'INTERNAL_ERROR');
         }
+    } else {
+        result_text(1, 'INTERNAL_ERROR');
+    }
+}
+
+function GetShowcaseOptions()
+{
+    global $db;
+
+    $sql_get_showcase_options = $db->Execute('select * from `case_options`');
+
+    if ($sql_get_showcase_options && $sql_get_showcase_options->RecordCount() > 0) {
+        result_text(0, [
+            'types' => $sql_get_showcase_options->Fields('types'),
+            'full_types' => $sql_get_showcase_options->Fields('full_types'),
+            'parts' => $sql_get_showcase_options->Fields('parts'),
+            'states' => $sql_get_showcase_options->Fields('states'),
+            'wheel_sizes' => $sql_get_showcase_options->Fields('wheel_sizes'),
+            'bike_types' => $sql_get_showcase_options->Fields('bike_types'),
+            'bike_directions' => $sql_get_showcase_options->Fields('bike_directions')
+            ]);
     } else {
         result_text(1, 'INTERNAL_ERROR');
     }
