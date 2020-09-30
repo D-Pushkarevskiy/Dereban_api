@@ -935,8 +935,10 @@ function GetShowCases()
         }
 
         result_text(0, $show_case_result);
+        return;
     } else {
         result_text(1, 'INTERNAL_ERROR 131');
+        return;
     }
 }
 
