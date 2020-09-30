@@ -250,15 +250,15 @@ function Auth()
                                     $sql_add_date_login = $db->Execute('update `user` set last_login_date=' . intval(gmmktime()) . ' where email=' . QPrepStr($user_login));
                                     $sql_add_login_attempt = $db->Execute('update `user` set login_attempts=0 where email=' . QPrepStr($user_login));
                                 } else {
-                                    result_text(1, 'INTERNAL_ERROR');
+                                    result_text(1, 'INTERNAL_ERROR 8');
                                 }
                             }
                         } else {
-                            result_text(1, 'INTERNAL_ERROR');
+                            result_text(1, 'INTERNAL_ERROR 7');
                         }
                     }
                 } else {
-                    result_text(1, 'INTERNAL_ERROR');
+                    result_text(1, 'INTERNAL_ERROR 6');
                 }
             }
         } else {
