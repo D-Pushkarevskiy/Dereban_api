@@ -10,8 +10,8 @@ function Mailto($email, $subject, $content) {
     $mail->IsSMTP();
     $mail->SMTPDebug = 0;
     $mail->SMTPAuth = TRUE;
-    $mail->SMTPSecure = "SSL";
-    $mail->Port = 465;
+    $mail->SMTPSecure = "tls";
+    $mail->Port = 587;
     $mail->Username = "dereban.info@gmail.com";
     $mail->Password = "!oKzpcGa2%FV111";
     $mail->Host = "smtp.gmail.com";
