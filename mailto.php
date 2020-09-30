@@ -28,6 +28,7 @@ function Mailto($email, $subject, $content) {
     if($mail->Send()){
         return true;
     } else {
+        echo $mail->ErrorInfo;
         return false;
     }
 }
