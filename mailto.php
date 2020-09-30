@@ -1,7 +1,11 @@
 <?php
 
-require('./includes/phpmailer/class.phpmailer.php');
-require('./includes/phpmailer/class.smtp.php');
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require './includes/phpmailer/Exception.php';
+require './includes/phpmailer/PHPMailer.php';
+require './includes/phpmailer/SMTP.php';
 
 function Mailto($email, $subject, $content) {
     $mail = new PHPMailer();
