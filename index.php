@@ -250,15 +250,15 @@ function Auth()
                                     $sql_add_date_login = $db->Execute('update `user` set last_login_date=' . intval(gmmktime()) . ' where email=' . QPrepStr($user_login));
                                     $sql_add_login_attempt = $db->Execute('update `user` set login_attempts=0 where email=' . QPrepStr($user_login));
                                 } else {
-                                    result_text(1, 'INTERNAL_ERROR 8');
+                                    result_text(1, 'INTERNAL_ERROR 18');
                                 }
                             }
                         } else {
-                            result_text(1, 'INTERNAL_ERROR 7');
+                            result_text(1, 'INTERNAL_ERROR 17');
                         }
                     }
                 } else {
-                    result_text(1, 'INTERNAL_ERROR 6');
+                    result_text(1, 'INTERNAL_ERROR 16');
                 }
             }
         } else {
@@ -310,20 +310,20 @@ function Auth()
                             // Отправляем результат на фронтенд
                             result_text(2, 'ON_EMAIL_SENDED_CONFIRM');
                         } else {
-                            result_text(1, 'INTERNAL_ERROR 5');
+                            result_text(1, 'INTERNAL_ERROR 15');
                         }
                     } else {
-                        result_text(1, 'INTERNAL_ERROR 4');
+                        result_text(1, 'INTERNAL_ERROR 14');
                     }
                 } else {
-                    result_text(1, 'INTERNAL_ERROR 3');
+                    result_text(1, 'INTERNAL_ERROR 13');
                 }
             } else {
-                result_text(1, 'INTERNAL_ERROR 2');
+                result_text(1, 'INTERNAL_ERROR 12');
             }
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR 1');
+        result_text(1, 'INTERNAL_ERROR 11');
     }
 }
 
@@ -365,13 +365,13 @@ function RefreshPasswordRequest()
                     if (Mailto($user_email, $subject, $content)) {
                         result_text(2, 'ON_EMAIL_SENDED_PASS_RESET');
                     } else {
-                        result_text(1, 'INTERNAL_ERROR');
+                        result_text(1, 'INTERNAL_ERROR 21');
                     }
                 } else {
-                    result_text(1, 'INTERNAL_ERROR');
+                    result_text(1, 'INTERNAL_ERROR 22');
                 }
             } else {
-                result_text(1, 'INTERNAL_ERROR');
+                result_text(1, 'INTERNAL_ERROR 23');
             }
         } else {
             result_text(1, 'CURRENT_EMAIL_NOT_REGISTERED');
@@ -412,17 +412,17 @@ function RefreshPassword()
                     if ($query) {
                         result_text(0, "RESET_PASSWORD_SUCCESS");
                     } else {
-                        result_text(1, 'INTERNAL_ERROR');
+                        result_text(1, 'INTERNAL_ERROR 31');
                     }
                 } else {
-                    result_text(1, 'INTERNAL_ERROR');
+                    result_text(1, 'INTERNAL_ERROR 32');
                 }
             }
         } else {
             result_text(2, 'PASSWORD_ALREADY_RESET');
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 33');
     }
 }
 
@@ -459,7 +459,7 @@ function Conf_register()
             result_text(1, 'ACCOUNT_ALREADY_CONFIRMED');
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 41');
     }
 }
 
@@ -508,10 +508,10 @@ function GetUserData()
                 'showcase_count' => $sql_get_showcases_count->Fields('count(*)')
             ]);
         } else {
-            result_text(1, 'INTERNAL_ERROR');
+            result_text(1, 'INTERNAL_ERROR 51');
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 52');
     }
 }
 
@@ -531,11 +531,11 @@ function GetTitleForUserAdsComp()
             if ($sql_get_user_name_surname && ($sql_get_user_name_surname->RecordCount() > 0)) {
                 result_text(0, ['MAIN.USERS_SHOWCASES', ' - ' . $sql_get_user_name_surname->Fields('name') . ' ' . $sql_get_user_name_surname->Fields('surname')]);
             } else {
-                result_text(1, 'INTERNAL_ERROR');
+                result_text(1, 'INTERNAL_ERROR 61');
             }
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 62');
     }
 }
 
@@ -566,19 +566,19 @@ function GetUserRating()
                     if ($sql_get_users_rating) {
                         result_text(0, $sql_get_users_rating->Fields('sum'));
                     } else {
-                        result_text(1, 'INTERNAL_ERROR');
+                        result_text(1, 'INTERNAL_ERROR 71');
                     }
                 } else {
                     result_text(0, 0);
                 }
             } else {
-                result_text(1, 'INTERNAL_ERROR');
+                result_text(1, 'INTERNAL_ERROR 72');
             }
         } else {
-            result_text(1, 'INTERNAL_ERROR');
+            result_text(1, 'INTERNAL_ERROR 73');
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 74');
     }
 }
 
@@ -616,13 +616,13 @@ function AddUserInfo()
             if ($sql_add_user_info) {
                 result_text(0, 'DATA_SAVED');
             } else {
-                result_text(1, 'INTERNAL_ERROR');
+                result_text(1, 'INTERNAL_ERROR 81');
             }
         } else {
-            result_text(1, 'INTERNAL_ERROR');
+            result_text(1, 'INTERNAL_ERROR 82');
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 83');
     }
 }
 
@@ -658,10 +658,10 @@ function GetUserInfo()
                 $sql_select_user_info->Fields('instagram')
             );
         } else {
-            result_text(1, 'INTERNAL_ERROR');
+            result_text(1, 'INTERNAL_ERROR 84');
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 85');
     }
 }
 
@@ -682,7 +682,7 @@ function GetShowcaseOptions()
             'bike_directions' => $sql_get_showcase_options->Fields('bike_directions')
             ]);
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 86');
     }
 }
 
@@ -695,10 +695,10 @@ function SetUserPhoto()
         if (SqlGetUserId()) {
             include_once './user_photo.php';
         } else {
-            result_text(1, 'INTERNAL_ERROR');
+            result_text(1, 'INTERNAL_ERROR 91');
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 92');
     }
 }
 
@@ -713,10 +713,10 @@ function RemoveAuthToken()
         if ($sql_remove_token) {
             result_text(0, 'JWT_DELETED');
         } else {
-            result_text(1, 'INTERNAL_ERROR');
+            result_text(1, 'INTERNAL_ERROR 101');
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 102');
     }
 }
 
@@ -728,7 +728,7 @@ function SaveShowcasePhoto()
         if (SqlGetUserId()) {
             include_once './showcase_photo.php';
         } else {
-            result_text(1, 'INTERNAL_ERROR');
+            result_text(1, 'INTERNAL_ERROR 111');
         }
     } else {
         result_text(0, '');
@@ -782,10 +782,10 @@ function SaveShowcase()
                         if ($sql_update_showcase) {
                             result_text(0, 'DATA_SAVED');
                         } else {
-                            result_text(1, 'INTERNAL_ERROR');
+                            result_text(1, 'INTERNAL_ERROR 121');
                         }
                     } else {
-                        result_text(1, 'INTERNAL_ERROR');
+                        result_text(1, 'INTERNAL_ERROR 122');
                     }
                 } else {
                     $sql_add_showcase = $db->Execute('insert into `user_showcase` (user_id, adding_time, update_time, photo_url, case_name, price, type, full_type, detail_type, state, wheel_size, velo_type, direction, description, additionalPhotos) values ('
@@ -798,17 +798,17 @@ function SaveShowcase()
                     if ($sql_add_showcase) {
                         result_text(0, 'SHOWCASE_ADDED');
                     } else {
-                        result_text(1, 'INTERNAL_ERROR');
+                        result_text(1, 'INTERNAL_ERROR 123');
                     }
                 }
             } else {
-                result_text(1, 'INTERNAL_ERROR');
+                result_text(1, 'INTERNAL_ERROR 124');
             }
         } else {
-            result_text(1, 'INTERNAL_ERROR');
+            result_text(1, 'INTERNAL_ERROR 125');
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 126');
     }
 }
 
@@ -874,8 +874,6 @@ function GetShowCases()
         . 'on us.user_id=uc.user_id '
         . $condition);
 
-        result_text(0, $sql_get_show_cases);
-
     if ($sql_get_show_cases && ($sql_get_show_cases->RecordCount() > 0)) {
         $show_case_result = [];
         if ($sql_get_show_cases->Fields('case_name') != null) {
@@ -938,7 +936,7 @@ function GetShowCases()
 
         result_text(0, $show_case_result);
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 131');
     }
 }
 
@@ -978,7 +976,7 @@ function ShowCaseChangeRating()
                 if ($sql_add_new_rating) {
                     result_text(2, $type);
                 } else {
-                    result_text(1, 'INTERNAL_ERROR');
+                    result_text(1, 'INTERNAL_ERROR 141');
                 }
             } else {
                 $sql_get_user_type = $db->Execute('select rating_value from `case_rating` where case_id=' . $case_id . ' and user_id=' . $cur_user_id);
@@ -988,7 +986,7 @@ function ShowCaseChangeRating()
                     if ($sql_set_user_type) {
                         result_text(2, $type);
                     } else {
-                        result_text(1, 'INTERNAL_ERROR');
+                        result_text(1, 'INTERNAL_ERROR 142');
                     }
                 } else {
                     result_text(1, 'REPEATING_CHANGE_RATING');
@@ -998,7 +996,7 @@ function ShowCaseChangeRating()
             result_text(0, 'NO_ALLOW_TO_CHANGE_RATING');
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 143');
     }
 }
 
@@ -1012,10 +1010,10 @@ function ShowCaseGetRating()
         if ($sql_get_case_rating) {
             result_text(0, $sql_get_case_rating->Fields('sum'));
         } else {
-            result_text(1, 'INTERNAL_ERROR');
+            result_text(1, 'INTERNAL_ERROR 151');
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 152');
     }
 }
 
@@ -1040,7 +1038,7 @@ function GetActiveRating()
             result_text(1, 'NO_FAVORITE_SHOWCASES');
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 161');
     }
 }
 
@@ -1058,18 +1056,18 @@ function ShowCaseToggleFavorite()
             if ($sql_delete_favorite_from_case) {
                 result_text(0, 'SHOWCASE_REMOVED_FROM_FAVORITES');
             } else {
-                result_text(1, 'INTERNAL_ERROR');
+                result_text(1, 'INTERNAL_ERROR 171');
             }
         } else {
             $sql_set_favorite_to_case = $db->Execute('insert into `case_favorite` (case_id, user_id) values (' . $case_id . ',' . SqlGetUserId() . ')');
             if ($sql_set_favorite_to_case) {
                 result_text(0, 'SHOWCASE_ADDED_TO_FAVORITES');
             } else {
-                result_text(1, 'INTERNAL_ERROR');
+                result_text(1, 'INTERNAL_ERROR 172');
             }
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 173');
     }
 }
 
@@ -1090,7 +1088,7 @@ function GetActiveFavorite()
             result_text(1, 'NO_FAVORITE_SHOWCASES');
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 181');
     }
 }
 
@@ -1141,13 +1139,13 @@ function GetCase()
                 ];
                 result_text(0, $show_case_result);
             } else {
-                result_text(1, 'INTERNAL_ERROR');
+                result_text(1, 'INTERNAL_ERROR 191');
             }
         } else {
-            result_text(1, 'INTERNAL_ERROR');
+            result_text(1, 'INTERNAL_ERROR 192');
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 193');
     }
 }
 
@@ -1166,23 +1164,23 @@ function ShowCaseToggleActive()
                 if ($sql_toggle_case_active_status) {
                     result_text(0, 'SHOWCASE_DEACTIVATED');
                 } else {
-                    result_text(2, 'INTERNAL_ERROR');
+                    result_text(2, 'INTERNAL_ERROR 201');
                 }
             } else if ($sql_get_case_active_status->Fields('active') == 0) {
                 $sql_toggle_case_active_status = $db->Execute('update `user_showcase` set active=1 where id=' . $case_id . ' and user_id=' . SqlGetUserId());
                 if ($sql_toggle_case_active_status) {
                     result_text(1, 'SHOWCASE_ACTIVATED');
                 } else {
-                    result_text(2, 'INTERNAL_ERROR');
+                    result_text(2, 'INTERNAL_ERROR 202');
                 }
             } else {
-                result_text(2, 'INTERNAL_ERROR');
+                result_text(2, 'INTERNAL_ERROR 203');
             }
         } else {
-            result_text(2, 'INTERNAL_ERROR');
+            result_text(2, 'INTERNAL_ERROR 204');
         }
     } else {
-        result_text(2, 'INTERNAL_ERROR');
+        result_text(2, 'INTERNAL_ERROR 205');
     }
 }
 
@@ -1196,9 +1194,9 @@ function DeleteShowCase()
         if ($sql_delete_show_case) {
             result_text(0, 'SHOWCASE_DELETED');
         } else {
-            result_text(1, 'INTERNAL_ERROR');
+            result_text(1, 'INTERNAL_ERROR 210');
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 211');
     }
 }

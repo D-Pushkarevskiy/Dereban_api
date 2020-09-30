@@ -16,12 +16,12 @@ if (is_uploaded_file($photo)) {
         if ($sql_add_user_data) {
             result_text(0, 'PHOTO_SAVED');
         } else {
-            result_text(1, 'INTERNAL_ERROR');
+            result_text(1, 'INTERNAL_ERROR 220');
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 221');
     }
 } else {
-    result_text(1, 'INTERNAL_ERROR');
+    result_text(1, 'INTERNAL_ERROR 222');
 }
 ?>
