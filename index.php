@@ -310,20 +310,20 @@ function Auth()
                             // Отправляем результат на фронтенд
                             result_text(2, 'ON_EMAIL_SENDED_CONFIRM');
                         } else {
-                            result_text(1, 'INTERNAL_ERROR');
+                            result_text(1, 'INTERNAL_ERROR 5');
                         }
                     } else {
-                        result_text(1, 'INTERNAL_ERROR');
+                        result_text(1, 'INTERNAL_ERROR 4');
                     }
                 } else {
-                    result_text(1, 'INTERNAL_ERROR');
+                    result_text(1, 'INTERNAL_ERROR 3');
                 }
             } else {
-                result_text(1, 'INTERNAL_ERROR');
+                result_text(1, 'INTERNAL_ERROR 2');
             }
         }
     } else {
-        result_text(1, 'INTERNAL_ERROR');
+        result_text(1, 'INTERNAL_ERROR 1');
     }
 }
 
