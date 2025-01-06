@@ -9,9 +9,9 @@ if (is_uploaded_file($photo)) {
 
     $destination .= $photo_name;
 
-    // Перемещаем файл из временной папки в указанную
+    // Переміщаємо файл з тимчасової папки в вказану.
     if (move_uploaded_file($photo, $destination)) {
-        // Записываем имя фото в базу
+        // Записуємо ім'я фото в базу.
         $sql_add_user_data = $db->Execute("update `user_contacts` set photo=" . QPrepStr($photo_name) . " where `user_id`=" . SqlGetUserId());
         if ($sql_add_user_data) {
             result_text(0, 'PHOTO_SAVED');
