@@ -16,7 +16,7 @@ if (is_uploaded_file($photo)) {
         }
     }
 
-    //Перемещаем файл из временной папки в указанную
+    // Переміщаємо файл з тимчасової папки в вказану.
     if (move_uploaded_file($photo, $destination . $user_photo_path)) {
         result_text(0, $file_path . $user_photo_path);
     } else {
