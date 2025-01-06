@@ -10,13 +10,13 @@ header('Access-Control-Allow-Origin: ' . ALLOW_FRONT_URL);
 header('Content-Type: application/json; charset=UTF-8');
 header('Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With');
 
-// Ключ шифрования токенов
+// Ключ шифрування токенів
 define('SECRET_KEY', '@p5U-xMtZbt=\vf6]xJy$q/(vJX4\y');
 
-// Пути сохранения фотографии профиля пользователя
+// Шляхи збереження фотографії профілю користувача
 define('PHOTO_PATH', $_SERVER['DOCUMENT_ROOT'].'/assets/images/users_images/');
 
-// Пути сохранения фотографий товара пользователя
+// Шляхи збереження фотографій товарів користувача
 define('ADS_IMAGES_PATH', $_SERVER['DOCUMENT_ROOT'].'/assets/images/users_images/showcase_photos/');
 
 // Base64 logo
@@ -60,7 +60,7 @@ function getBearerToken()
     return null;
 }
 
-// Роутинг по функциям
+// Роутинг
 if (isset($_GET['func'])) {
     switch ($_GET['func']) {
         case 'auth':
@@ -144,7 +144,7 @@ if (isset($_GET['func'])) {
     }
 }
 
-// Ответ фронтенду
+// Відповідь фронтенду
 function result_text($code, $text, $isAuth = NULL)
 {
     echo json_encode([
@@ -155,7 +155,7 @@ function result_text($code, $text, $isAuth = NULL)
     return false;
 }
 
-function result_user_info($photo, $name, $surname, $phone, $phone2, $area, $telegram, $vk, $facebook, $instagram)
+function result_user_info($photo, $name, $surname, $phone, $phone2, $area, $telegram, $facebook, $instagram)
 {
     echo json_encode([
         'photo' => $photo,
@@ -165,7 +165,6 @@ function result_user_info($photo, $name, $surname, $phone, $phone2, $area, $tele
         'phone2' => $phone2,
         'area' => $area,
         'telegram' => $telegram,
-        'vk' => $vk,
         'facebook' => $facebook,
         'instagram' => $instagram
     ]);
@@ -177,17 +176,17 @@ function Auth()
 
     global $db;
 
-    // Проверка на установление переменной значением и на ее пустоту (login, password)
+    // Перевірка на встановлення змінної значенням і на її порожнечу
     if (isset($_GET['login']) && $_GET['login'] != '' && isset($_GET['password']) && $_GET['password'] != '') {
 
         $user_login = $_GET['login'];
         $user_password = $_GET['password'];
 
-        // Запрос на поле пароля имейл которого совпадает с введенным пользователем
+        // Запит на поле пароля, електронна пошта якого збігається з введеною користувачем.
         $sql_check_data = 'select password from `user` where email=' . QPrepStr($user_login);
         $query = $db->Execute($sql_check_data);
 
-        // Авторизация, иначе регистрация
+        // Авторизація, інакше реєстрація.
         if ($query && ($query->RecordCount() > 0)) {
 
             $sql_check_token = 'select '
@@ -196,10 +195,10 @@ function Auth()
                 . 'inner join `user` u on ut.user_id=u.id '
                 . 'where u.email=' . QPrepStr($user_login);
             $query_check_token = $db->Execute($sql_check_token);
-            // Вход в существующий аккаунт
+            // Вхід до існуючого облікового запису.
             if ($user_password != $query->Fields('password')) {
-                // Ошибка ввода пароля
-                // Проверка кол-ва неправильных вводов пароля
+                // Помилка вводу пароля.
+                // Перевірка кількості неправильних вводів пароля.
                 $sql_get_login_attempt = $db->Execute("select login_attempts from `user` where email=" . QPrepStr($user_login));
                 if ($sql_get_login_attempt && $sql_get_login_attempt->Fields('login_attempts') >= 5) {
                     result_text(4, 'LOGIN_DATA_INCORRECT_ATTEMPTS');
@@ -212,7 +211,7 @@ function Auth()
                     if ($query_check_token->Fields('regToken') != null) {
                         result_text(1, 'ACCOUNT_NOT_CONFIRMED');
                     } else {
-                        // Создание токена авторизированного пользователя
+                        // Створення токена авторизованого користувача.
                         $authToken = array(
                             'user' => $user_login,
                             'date' => gmmktime()
@@ -220,18 +219,18 @@ function Auth()
 
                         $jwt = JWT::encode($authToken, SECRET_KEY);
 
-                        // Выбираем id пользователя из таблицы user
+                        // Вибираємо ID користувача з таблиці user.
                         $sql_get_user_id = $db->Execute("select id from `user` where email=" . QPrepStr($user_login));
 
                         if ($sql_get_user_id) {
-                            // Проверка на существование authToken-а
+                            // Перевірка на існування authToken-а.
                             $sql_auth_token = $db->Execute("select authToken from `user_tokens` where id=" . $sql_get_user_id->Fields('id'));
                             if ($sql_auth_token && ($sql_auth_token->Fields('authToken') != NULL)) {
-                                // Успешная авторизация
+                                // Успішна авторизація.
                                 result_text(0, $sql_auth_token->Fields('authToken'));
                                 $sql_add_login_attempt = $db->Execute('update `user` set login_attempts=0 where email=' . QPrepStr($user_login));
                             } else {
-                                // Занесение токена в базу данных
+                                // Занесення токена в базу даних.
                                 $sql_add_auth_token = 'update `user_tokens` set authToken=' . QPrepStr($jwt) . ' where user_id=' . $sql_get_user_id->Fields('id');
                                 $query_add_auth_token = $db->Execute($sql_add_auth_token);
 
@@ -240,10 +239,10 @@ function Auth()
                                     $sql_check_date_login = $db->Execute('select last_login_date from `user` where email=' . QPrepStr($user_login));
 
                                     if ($sql_check_date_login && ($sql_check_date_login->Fields('last_login_date') != NULL)) {
-                                        // Успешная авторизация
+                                        // Успішна авторизація.
                                         result_text(0, $jwt);
                                     } else {
-                                        // Успешная авторизация в первый раз
+                                        // Успішна авторизація вперше.
                                         result_text(0, $jwt, false);
                                     }
 
@@ -271,22 +270,22 @@ function Auth()
 
             $url = 'http://localhost:4200/confirm-registration/' . $jwt;
 
-            // Заносим данные в базу
+            // Заносимо дані в базу.
             $sql_add_user_data = $db->Execute("insert into `user`(email, password) values (" . QPrepStr($user_login) . "," . QPrepStr($user_password) . ")");
 
             if ($sql_add_user_data) {
-                // Выбираем id пользователя из таблицы user
+                // Вибираємо ID користувача з таблиці user.
                 $sql_get_user_id = $db->Execute("select id from `user` where email=" . QPrepStr($user_login));
 
                 if ($sql_get_user_id) {
-                    // Добавляем user_id из таблицы user поля id
+                    // Додаємо user_id з таблиці user в поле id.
                     $sql_set_user_id = $db->Execute("insert into `user_tokens` (user_id, regToken) values(" . $sql_get_user_id->Fields('id') . ", " . QPrepStr($jwt) . ")");
-                    // Добавляем информацию о пользователе в таблицу user_contacts
+                    // Додаємо інформацію про користувача в таблицю user_contacts.
                     $login = explode('@', $user_login)[0];
                     $sql_add_user_contacts_data = $db->Execute("insert into `user_contacts`(user_id,name) values (" . $sql_get_user_id->Fields('id') . "," . QPrepStr($login) . ")");
                     if ($sql_set_user_id && $sql_add_user_contacts_data) {
-                        // Отправляем e-mail
-                        $subject = "Подтверждение регистрации на сайте 'Dereban.ua'";
+                        // Відправляємо e-mail
+                        $subject = "Підтвердження реєстрації на сайті 'Dereban.ua'";
                         $content = '<div style="text-align: center;font-size: 16px;padding: 30px 20px;border: 1px solid #d4ddf9;border-radius: 10px;">
                             <div style="margin-bottom: 30px;">
                             <a href="dereban.ua">
@@ -294,20 +293,20 @@ function Auth()
                             </a>
                             </div>
                             <div>
-                            <h3>Подтверждение регистрации</h3>
+                            <h3>Підтвердження реєстрації.</h3>
                             <hr>
                             </div>
                             <div style="margin-bottom: 30px;">
-                            Для подтверждения регистрации на сайте <a href="dereban.ua">Dereban.ua</a> перейдите по ссылке:
+                            Для підтвердження реєстрації на сайті <a href="dereban.ua">Dereban.ua</a> перейдіть за посиланням:
                             </div>
                             <div style="margin-bottom: 20px;">
                             <a href=' . $url . ' target="_blank" style="color: #f7f7f7;text-decoration: none;padding: 15px;background-color: #445ba7;border-radius: 5px;font-size: 14px;">
-                            Подтвердить регистрацию
+                            Підтвердити реєстрацію
                             </a>
                             </div>
                             </div>';
                         if (Mailto(PrepStr($user_login), $subject, $content)) {
-                            // Отправляем результат на фронтенд
+                            // Відправляємо результат на фронтенд
                             result_text(2, 'ON_EMAIL_SENDED_CONFIRM');
                         } else {
                             result_text(1, 'INTERNAL_ERROR 15');
@@ -342,7 +341,7 @@ function RefreshPasswordRequest()
             if ($sql_get_user_id && ($sql_get_user_id->RecordCount() > 0)) {
                 $sql_add_passToken = $db->Execute('update `user_tokens` set passToken=' . intval(gmmktime()) . ' where user_id=' . $sql_get_user_id->Fields('id'));
                 if ($sql_add_passToken) {
-                    $subject = "Сброс пароля на сайте 'Dereban.ua'";
+                    $subject = "Скидання пароля на сайті 'Dereban.ua'";
                     $content = '<div style="text-align: center;font-size: 16px;padding: 30px 20px;border: 1px solid #d4ddf9;border-radius: 10px;">
                             <div style="margin-bottom: 30px;">
                             <a href="dereban.ua">
@@ -350,15 +349,15 @@ function RefreshPasswordRequest()
                             </a>
                             </div>
                             <div>
-                            <h3>Сброс пароля</h3>
+                            <h3>Скидання пароля</h3>
                             <hr>
                             </div>
                             <div style="margin-bottom: 30px;">
-                            Для сброса пароля на сайте <a href="dereban.ua">Dereban.ua</a>, передите по ссылке:
+                            Для скидання пароля на сайті <a href="dereban.ua">Dereban.ua</a>, перейдіть за посиланням:
                             </div>
                             <div style="margin-bottom: 20px;">
                             <a href=' . $url . ' target="_blank" style="color: #f7f7f7;text-decoration: none;padding: 15px;background-color: #445ba7;border-radius: 5px;font-size: 14px;">
-                            Сбросить пароль
+                            Скинути пароль
                             </a>
                             </div>
                             </div>';
@@ -400,10 +399,10 @@ function RefreshPassword()
 
         if ($query && ($query->RecordCount() > 0)) {
             if ($current_password != $query->Fields('password')) {
-                // Ошибка ввода пароля
+                // Помилка введення паролю
                 result_text(3, 'CHECK_PASSWORD');
             } else {
-                // Успешная смена пароля
+                // Успішна зміна пароля.
                 $sql_delete_passToken = 'update `user_tokens` set passToken=null where passToken=' . QPrepStr($token);
                 $query = $db->Execute($sql_delete_passToken);
                 if ($query) {
@@ -431,7 +430,7 @@ function Conf_register()
 
     global $db;
 
-    // Проверка на установление переменной значением и на ее пустоту (password)
+    // Перевірка на встановлення змінної значенням і на її порожнечу (password)
 
     if (isset($_GET['password']) && $_GET['password'] != '' && $_GET['regToken'] != '') {
 
@@ -447,10 +446,10 @@ function Conf_register()
 
         if ($query && ($query->RecordCount() > 0)) {
             if ($user_password != $query->Fields('password')) {
-                // Ошибка ввода пароля
+                // Помилка вводу паролю
                 result_text(3, 'CHECK_PASSWORD');
             } else {
-                // Успешная регистрация
+                // Успішна реєстрація
                 $sql_delete_regToken = 'update `user_tokens` set regToken=null where regToken=' . QPrepStr($regToken);
                 $query = $db->Execute($sql_delete_regToken);
                 result_text(0, "YEPI_REGISTERED_SUCCESS");
@@ -605,7 +604,6 @@ function AddUserInfo()
             $upd[] = ' phone2=' . $phone2;
             $upd[] = ' area=' . QPrepStr($contacts['area']);
             $upd[] = ' telegram=' . QPrepStr($social['telegram']);
-            $upd[] = ' vk=' . QPrepStr($social['vk']);
             $upd[] = ' facebook=' . QPrepStr($social['facebook']);
             $upd[] = ' instagram=' . QPrepStr($social['instagram']);
 
@@ -639,7 +637,6 @@ function GetUserInfo()
         phone2, 
         area, 
         telegram, 
-        vk, 
         facebook, 
         instagram 
         from `user_contacts` where user_id=' . SqlGetUserId());
@@ -653,7 +650,6 @@ function GetUserInfo()
                 $sql_select_user_info->Fields('phone2'),
                 $sql_select_user_info->Fields('area'),
                 $sql_select_user_info->Fields('telegram'),
-                $sql_select_user_info->Fields('vk'),
                 $sql_select_user_info->Fields('facebook'),
                 $sql_select_user_info->Fields('instagram')
             );
@@ -866,7 +862,6 @@ function GetShowCases()
         . 'uc.telegram, '
         . 'uc.phone, '
         . 'uc.phone2, '
-        . 'uc.vk, '
         . 'uc.facebook, '
         . 'uc.instagram '
         . 'from `user_showcase` us '
@@ -926,7 +921,6 @@ function GetShowCases()
                     'user_telegram' => $sql_get_show_cases->Fields('telegram'),
                     'user_phone' => $sql_get_show_cases->Fields('phone'),
                     'user_phone2' => $sql_get_show_cases->Fields('phone2'),
-                    'user_vk' => $sql_get_show_cases->Fields('vk'),
                     'user_facebook' => $sql_get_show_cases->Fields('facebook'),
                     'user_instagram' => $sql_get_show_cases->Fields('instagram')
                 ];
@@ -962,11 +956,11 @@ function ShowCaseChangeRating()
         $case_id = intval($_GET['case_id']);
         $type = intval($_GET['type']);
 
-        // id пользователя изменившего рейтинг
+        // id користувача що змінив рейтинг.
         $cur_user_id = SqlGetUserId();
-        // id пользователя этого объявления
+        // id користувача цього оголошення.
         $sql_get_user_id_case = $db->Execute('select user_id from `user_showcase` where id=' . $case_id);
-        // id пользователей изменявших когда-либо рейтинг этого объявления
+        // id користувачів змінюючих коли-небудь рейтинг цього оголошення.
         $sql_get_user_state = $db->Execute('select user_id from `case_rating` where case_id=' . $case_id);
 
         if ($cur_user_id != $sql_get_user_id_case->Fields('user_id')) {
